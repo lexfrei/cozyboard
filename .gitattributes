@@ -1,0 +1,7 @@
+* text=auto eol=lf
+
+bun.lock linguist-generated
+*.svg binary
+*.png binary
+*.woff binary
+*.woff2 binary
