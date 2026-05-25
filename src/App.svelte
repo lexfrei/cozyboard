@@ -23,6 +23,14 @@
 
   let settingsOpen = $state(false)
   let viewer = $state<string | null>(null)
+  let titleQuery = $state('')
+
+  function matchesQuery(title: string, author: string, query: string): boolean {
+    const q = query.trim().toLowerCase()
+    if (q === '') return true
+    const haystack = `${title.toLowerCase()} @${author.toLowerCase()}`
+    return q.split(/\s+/).every((word) => haystack.includes(word))
+  }
 
   $effect(() => {
     const token = settings.token
@@ -122,7 +130,11 @@
       {@const filteredGroups = pulls.groups
         .map((g) => ({
           ...g,
-          pullRequests: g.pullRequests.filter((pr) => passesFilters(pr, settings.filters, viewer)),
+          pullRequests: g.pullRequests.filter(
+            (pr) =>
+              passesFilters(pr, settings.filters, viewer) &&
+              matchesQuery(pr.title, pr.author?.login ?? '', titleQuery),
+          ),
         }))
         .filter((g) => g.pullRequests.length > 0)
         .sort((a, b) => {
@@ -140,6 +152,14 @@
         >
         <Ticker lastFetchedAt={pulls.lastFetchedAt} onClick={refresh} />
       </div>
+
+      <input
+        type="search"
+        bind:value={titleQuery}
+        class="mb-2 w-full border border-[var(--color-border-bright)] bg-[var(--color-bg)] px-2 py-1 text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-none"
+        placeholder="/ search title or @author (space = AND)"
+        aria-label="search PR titles"
+      />
 
       <FilterBar
         filters={settings.filters}
