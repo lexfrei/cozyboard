@@ -8,7 +8,7 @@ export interface Settings {
 
 const DEFAULTS: Settings = {
   token: null,
-  orgs: ['cozystack'],
+  orgs: [],
   musicEnabled: false,
 }
 

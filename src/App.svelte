@@ -29,7 +29,12 @@
     const controller = new AbortController()
     void (async () => {
       try {
-        viewer = await fetchViewer(token, controller.signal)
+        const login = await fetchViewer(token, controller.signal)
+        viewer = login
+        if (settings.orgs.length === 0) {
+          settings = { ...settings, orgs: [login] }
+          saveSettings(settings)
+        }
       } catch {
         viewer = null
       }
