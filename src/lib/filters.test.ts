@@ -141,13 +141,29 @@ describe('passesFilters', () => {
     })
   })
 
-  describe('maxAgeDays', () => {
+  describe('age range', () => {
     const now = new Date('2025-01-30T00:00:00Z').getTime()
+    const old29d = pr({ updatedAt: '2025-01-01T00:00:00Z' })
+    const fresh1d = pr({ updatedAt: '2025-01-29T00:00:00Z' })
 
-    it('drops PRs older than the threshold', () => {
-      const old = pr({ updatedAt: '2025-01-01T00:00:00Z' }) // 29d
-      expect(passesFilters(old, filters({ maxAgeDays: 7 }), null, now)).toBe(false)
-      expect(passesFilters(old, filters({ maxAgeDays: 30 }), null, now)).toBe(true)
+    it('maxAgeDays drops PRs older than the threshold', () => {
+      expect(passesFilters(old29d, filters({ maxAgeDays: 7 }), null, now)).toBe(false)
+      expect(passesFilters(old29d, filters({ maxAgeDays: 30 }), null, now)).toBe(true)
+    })
+
+    it('minAgeDays drops PRs younger than the threshold', () => {
+      expect(passesFilters(fresh1d, filters({ minAgeDays: 7 }), null, now)).toBe(false)
+      expect(passesFilters(old29d, filters({ minAgeDays: 7 }), null, now)).toBe(true)
+    })
+
+    it('min and max combine into a range', () => {
+      const f = filters({ minAgeDays: 5, maxAgeDays: 30 })
+      const tooFresh = pr({ updatedAt: '2025-01-29T00:00:00Z' }) // 1d
+      const inRange = pr({ updatedAt: '2025-01-20T00:00:00Z' }) // 10d
+      const tooOld = pr({ updatedAt: '2024-12-01T00:00:00Z' }) // 60d
+      expect(passesFilters(tooFresh, f, null, now)).toBe(false)
+      expect(passesFilters(inRange, f, null, now)).toBe(true)
+      expect(passesFilters(tooOld, f, null, now)).toBe(false)
     })
   })
 

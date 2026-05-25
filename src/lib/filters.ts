@@ -6,6 +6,7 @@ export interface Filters {
   readyForReview: TriState
   mine: TriState
   fromMaintainer: TriState
+  minAgeDays: number | null
   maxAgeDays: number | null
 }
 
@@ -13,6 +14,7 @@ export const EMPTY_FILTERS: Filters = {
   readyForReview: null,
   mine: null,
   fromMaintainer: null,
+  minAgeDays: null,
   maxAgeDays: null,
 }
 
@@ -64,7 +66,11 @@ export function passesFilters(
   if (!matchesTriState(filters.readyForReview, isReadyForReview(pr))) return false
   if (!matchesTriState(filters.mine, isMine(pr, viewer))) return false
   if (!matchesTriState(filters.fromMaintainer, isFromMaintainer(pr))) return false
-  if (filters.maxAgeDays !== null && ageDays(pr, now) > filters.maxAgeDays) return false
+  if (filters.minAgeDays !== null || filters.maxAgeDays !== null) {
+    const age = ageDays(pr, now)
+    if (filters.minAgeDays !== null && age < filters.minAgeDays) return false
+    if (filters.maxAgeDays !== null && age > filters.maxAgeDays) return false
+  }
   return true
 }
 
@@ -73,6 +79,7 @@ export function isFilterActive(filters: Filters): boolean {
     filters.readyForReview !== null ||
     filters.mine !== null ||
     filters.fromMaintainer !== null ||
+    filters.minAgeDays !== null ||
     filters.maxAgeDays !== null
   )
 }

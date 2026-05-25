@@ -28,11 +28,18 @@
     onChange({ ...filters, [key]: cycleTriState(filters[key]) })
   }
 
+  function parseAge(raw: string): number | null {
+    if (raw === '') return null
+    const n = Number(raw)
+    return Number.isFinite(n) && n > 0 ? n : null
+  }
+
+  function updateMinAge(event: Event) {
+    onChange({ ...filters, minAgeDays: parseAge((event.currentTarget as HTMLInputElement).value) })
+  }
+
   function updateMaxAge(event: Event) {
-    const value = (event.currentTarget as HTMLInputElement).value
-    const n = value === '' ? null : Number(value)
-    const cleaned = n !== null && Number.isFinite(n) && n > 0 ? n : null
-    onChange({ ...filters, maxAgeDays: cleaned })
+    onChange({ ...filters, maxAgeDays: parseAge((event.currentTarget as HTMLInputElement).value) })
   }
 
   function reset() {
@@ -62,18 +69,30 @@
     </button>
   {/each}
 
-  <label class="flex items-baseline gap-1 text-[var(--color-fg-dim)]">
-    <span>age ≤</span>
+  <div
+    class="flex items-baseline gap-1 border border-[var(--color-border-bright)] px-2 py-0.5 text-[var(--color-fg-dim)] focus-within:border-[var(--color-accent)]"
+  >
+    <input
+      type="number"
+      min="1"
+      value={filters.minAgeDays ?? ''}
+      oninput={updateMinAge}
+      class="w-10 bg-transparent text-right text-[var(--color-fg)] focus:outline-none"
+      placeholder="0"
+      aria-label="min age in days"
+    />
+    <span>d ≤ age ≤</span>
     <input
       type="number"
       min="1"
       value={filters.maxAgeDays ?? ''}
       oninput={updateMaxAge}
-      class="w-14 border border-[var(--color-border-bright)] bg-[var(--color-bg)] px-1 py-0 text-right text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-none"
+      class="w-10 bg-transparent text-right text-[var(--color-fg)] focus:outline-none"
       placeholder="∞"
+      aria-label="max age in days"
     />
     <span>d</span>
-  </label>
+  </div>
 
   <span class="ml-auto text-[var(--color-fg-dim)]">
     <span class="text-[var(--color-fg)]">{matched}</span>/<span>{total}</span> shown

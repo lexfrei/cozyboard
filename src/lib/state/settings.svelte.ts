@@ -25,15 +25,20 @@ function triFrom(value: unknown): TriState {
   return null
 }
 
+function positiveNumberOrNull(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value
+  return null
+}
+
 function normaliseFilters(value: unknown): Filters {
   if (typeof value !== 'object' || value === null) return { ...EMPTY_FILTERS }
   const raw = value as Record<string, unknown>
-  const maxAge = typeof raw.maxAgeDays === 'number' && raw.maxAgeDays > 0 ? raw.maxAgeDays : null
   return {
     readyForReview: triFrom(raw.readyForReview),
     mine: triFrom(raw.mine),
     fromMaintainer: triFrom(raw.fromMaintainer),
-    maxAgeDays: maxAge,
+    minAgeDays: positiveNumberOrNull(raw.minAgeDays),
+    maxAgeDays: positiveNumberOrNull(raw.maxAgeDays),
   }
 }
 
