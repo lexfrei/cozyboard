@@ -143,14 +143,42 @@
 
   <main class="mx-auto max-w-5xl px-4 py-6">
     {#if settings.token === null}
-      <pre class="text-[var(--color-fg)]">
-&gt; awaiting configuration
+      <pre
+        class="whitespace-pre-wrap text-[var(--color-fg)]"
+      >&gt; awaiting configuration
 &gt; no github token in localStorage
 &gt;
 &gt; click <span class="text-[var(--color-accent)]">[⚙]</span> in the header to begin
 &gt;
-&gt; <span class="cursor"></span>
-      </pre>
+&gt;
+&gt; <span class="text-[var(--color-fg-bright)]">[why is a login required?]</span>
+&gt; github's graphql api refuses anonymous queries — even for fully public
+&gt; repos. without a token cozyboard literally cannot fetch anything.
+&gt;
+&gt; <span class="text-[var(--color-fg-bright)]">[is the login safe?]</span>
+&gt; <span class="text-[var(--color-accent)]">yes — your token stays in your browser.</span> it's written to
+&gt; localStorage and sent with every fetch to api.github.com directly,
+&gt; over https, from this page. the cozyboard server never stores it
+&gt; and never logs it.
+&gt;
+&gt; the only moment the server even handles the token is the oauth device
+&gt; flow exchange: github's /login/oauth/access_token endpoint doesn't
+&gt; return CORS headers, so the browser can't call it directly. cozyboard
+&gt; proxies that single request transparently and forgets the result the
+&gt; instant the response leaves the server.
+&gt;
+&gt; <span class="text-[var(--color-fg-bright)]">[trust nobody?]</span>
+&gt; 1. fork <a href="https://github.com/lexfrei/cozyboard" target="_blank" rel="noopener noreferrer" class="text-[var(--color-info)] underline">github.com/lexfrei/cozyboard</a>
+&gt; 2. read <span class="text-[var(--color-info)]">src/</span> and <span class="text-[var(--color-info)]">server.ts</span> — a small typescript codebase
+&gt; 3. deploy your own with the <span class="text-[var(--color-info)]">Containerfile</span> at the repo root
+&gt; 4. profit
+&gt;
+&gt; alternatively: open <span class="text-[var(--color-accent)]">[⚙]</span> → ▶ manual token (advanced), paste a
+&gt; fine-grained PAT, and the device-flow server proxy is bypassed
+&gt; entirely — the token goes straight from your clipboard to
+&gt; localStorage to api.github.com, no third party in the middle.
+&gt;
+&gt; <span class="cursor"></span></pre>
     {:else if settings.orgs.length === 0}
       <div class="border border-[var(--color-warn)] p-3 text-[var(--color-warn)]">
         ▸ no orgs configured — add one in <button
