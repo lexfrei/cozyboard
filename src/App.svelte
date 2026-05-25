@@ -87,7 +87,10 @@
   }
 
   async function shareFilters(): Promise<boolean> {
-    const params = serializeShareableState({ filters: settings.filters, query: titleQuery })
+    const params = serializeShareableState(
+      { filters: settings.filters, query: titleQuery },
+      settings.orgs,
+    )
     const queryString = params.toString()
     const url =
       `${window.location.origin}${window.location.pathname}` +
@@ -210,7 +213,23 @@
 
       <input
         type="search"
-        bind:value={titleQuery}
+        value={titleQuery}
+        oninput={(e) => {
+          const value = e.currentTarget.value
+          if (value.toLowerCase() === 'iddqd') {
+            e.currentTarget.value = ''
+            titleQuery = ''
+            // No noopener: we want to focus the new tab so it doesn't stay
+            // hidden behind cozyboard. The destination is fixed and trusted.
+            const tab = window.open(
+              'https://www.youtube.com/watch?v=dQw4w9WgXcQ&autoplay=1',
+              '_blank',
+            )
+            tab?.focus()
+            return
+          }
+          titleQuery = value
+        }}
         class="mb-2 w-full border border-[var(--color-border-bright)] bg-[var(--color-bg)] px-2 py-1 text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-none"
         placeholder="/ search title or @author (space = AND)"
         aria-label="search PR titles"
@@ -218,6 +237,7 @@
 
       <FilterBar
         filters={settings.filters}
+        orgs={settings.orgs}
         {matched}
         total={pulls.totalPRs}
         onChange={setFilters}

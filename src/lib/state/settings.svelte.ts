@@ -54,6 +54,7 @@ function normaliseFilters(value: unknown): Filters {
     requestedFromMe: triFrom(raw.requestedFromMe),
     minAgeDays: positiveNumberOrNull(raw.minAgeDays),
     maxAgeDays: positiveNumberOrNull(raw.maxAgeDays),
+    orgs: normaliseLabelStates(raw.orgs),
     labels: normaliseLabelStates(raw.labels),
   }
 }

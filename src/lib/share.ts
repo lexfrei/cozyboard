@@ -24,7 +24,31 @@ export interface ShareableState {
   query: string
 }
 
-export function serializeShareableState(state: ShareableState): URLSearchParams {
+function serializeOrgFacet(
+  states: Record<string, TriState>,
+  contextOrgs: string[],
+  params: URLSearchParams,
+  paramName: string,
+): void {
+  const explicit = Object.entries(states).filter(([, s]) => s !== null)
+  if (explicit.length > 0) {
+    for (const [name, state] of explicit.sort(([a], [b]) => a.localeCompare(b))) {
+      const tri = triToParam(state)
+      if (tri !== null) params.append(paramName, `${name}:${tri}`)
+    }
+    return
+  }
+  // Implicit: capture the currently-fetched orgs as include, so the recipient
+  // sees the same scope even when the sharer didn't set the filter explicitly.
+  for (const org of [...contextOrgs].sort()) {
+    params.append(paramName, `${org}:t`)
+  }
+}
+
+export function serializeShareableState(
+  state: ShareableState,
+  contextOrgs: string[] = [],
+): URLSearchParams {
   const params = new URLSearchParams()
   const f = state.filters
 
@@ -42,6 +66,8 @@ export function serializeShareableState(state: ShareableState): URLSearchParams 
   if (f.minAgeDays !== null) params.set('min', String(f.minAgeDays))
   if (f.maxAgeDays !== null) params.set('max', String(f.maxAgeDays))
 
+  serializeOrgFacet(f.orgs, contextOrgs, params, 'org')
+
   const labelEntries = Object.entries(f.labels)
     .filter(([, state]) => state !== null)
     .sort(([a], [b]) => a.localeCompare(b))
@@ -57,14 +83,20 @@ export function serializeShareableState(state: ShareableState): URLSearchParams 
 export function parseShareableState(params: URLSearchParams): ShareableState | null {
   if ([...params.keys()].length === 0) return null
 
-  const labels: Record<string, TriState> = {}
-  for (const raw of params.getAll('label')) {
-    const idx = raw.lastIndexOf(':')
-    if (idx <= 0) continue
-    const name = raw.slice(0, idx)
-    const tri = paramToTri(raw.slice(idx + 1))
-    if (tri !== null) labels[name] = tri
+  function parseFacet(paramName: string): Record<string, TriState> {
+    const out: Record<string, TriState> = {}
+    for (const raw of params.getAll(paramName)) {
+      const idx = raw.lastIndexOf(':')
+      if (idx <= 0) continue
+      const name = raw.slice(0, idx)
+      const tri = paramToTri(raw.slice(idx + 1))
+      if (tri !== null) out[name] = tri
+    }
+    return out
   }
+
+  const orgs = parseFacet('org')
+  const labels = parseFacet('label')
 
   const filters: Filters = {
     ...EMPTY_FILTERS,
@@ -75,6 +107,7 @@ export function parseShareableState(params: URLSearchParams): ShareableState | n
     requestedFromMe: paramToTri(params.get('req')),
     minAgeDays: intFromParam(params.get('min')),
     maxAgeDays: intFromParam(params.get('max')),
+    orgs,
     labels,
   }
 

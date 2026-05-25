@@ -215,6 +215,25 @@ describe('passesFilters', () => {
     })
   })
 
+  describe('orgs', () => {
+    function repoPR(org: string): PullRequest {
+      return pr({ repository: { name: 'r', nameWithOwner: `${org}/r` } })
+    }
+
+    it('include keeps PRs matching any included org', () => {
+      const f = filters({ orgs: { cozystack: true, 'aenix-io': true } })
+      expect(passesFilters(repoPR('cozystack'), f, null)).toBe(true)
+      expect(passesFilters(repoPR('aenix-io'), f, null)).toBe(true)
+      expect(passesFilters(repoPR('other'), f, null)).toBe(false)
+    })
+
+    it('exclude drops PRs from the excluded org', () => {
+      const f = filters({ orgs: { cozystack: false } })
+      expect(passesFilters(repoPR('cozystack'), f, null)).toBe(false)
+      expect(passesFilters(repoPR('other'), f, null)).toBe(true)
+    })
+  })
+
   describe('combined', () => {
     it('AND-combines all set filters', () => {
       const f = filters({ readyForReview: true, mine: false })

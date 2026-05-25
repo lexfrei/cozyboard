@@ -11,6 +11,7 @@ export interface Filters {
   requestedFromMe: TriState
   minAgeDays: number | null
   maxAgeDays: number | null
+  orgs: Record<string, TriState>
   labels: Record<string, TriState>
 }
 
@@ -22,6 +23,7 @@ export const EMPTY_FILTERS: Filters = {
   requestedFromMe: null,
   minAgeDays: null,
   maxAgeDays: null,
+  orgs: {},
   labels: {},
 }
 
@@ -69,6 +71,26 @@ function ageDays(pr: PullRequest, now: number = Date.now()): number {
   return (now - updated) / 86_400_000
 }
 
+export function orgOf(pr: PullRequest): string {
+  const idx = pr.repository.nameWithOwner.indexOf('/')
+  return idx === -1 ? pr.repository.nameWithOwner : pr.repository.nameWithOwner.slice(0, idx)
+}
+
+function passesOrgFilter(pr: PullRequest, orgStates: Record<string, TriState>): boolean {
+  const org = orgOf(pr)
+  let anyInclude = false
+  let anyMatchedInclude = false
+  for (const [name, state] of Object.entries(orgStates)) {
+    if (state === false && name === org) return false
+    if (state === true) {
+      anyInclude = true
+      if (name === org) anyMatchedInclude = true
+    }
+  }
+  if (anyInclude && !anyMatchedInclude) return false
+  return true
+}
+
 function matchesTriState(state: TriState, predicate: boolean): boolean {
   if (state === null) return true
   return state ? predicate : !predicate
@@ -85,6 +107,7 @@ export function passesFilters(
   if (!matchesTriState(filters.fromMaintainer, isFromMaintainer(pr))) return false
   if (!matchesTriState(filters.reviewedByMe, isReviewedByMe(pr))) return false
   if (!matchesTriState(filters.requestedFromMe, isRequestedFromMe(pr, viewer))) return false
+  if (!passesOrgFilter(pr, filters.orgs)) return false
   if (filters.minAgeDays !== null || filters.maxAgeDays !== null) {
     const age = ageDays(pr, now)
     if (filters.minAgeDays !== null && age < filters.minAgeDays) return false
@@ -110,6 +133,7 @@ export function isFilterActive(filters: Filters): boolean {
     filters.requestedFromMe !== null ||
     filters.minAgeDays !== null ||
     filters.maxAgeDays !== null ||
+    anyLabelSet(filters.orgs) ||
     anyLabelSet(filters.labels)
   )
 }

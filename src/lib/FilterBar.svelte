@@ -3,13 +3,14 @@
 
   interface Props {
     filters: Filters
+    orgs: string[]
     matched: number
     total: number
     onChange: (next: Filters) => void
     onShare: () => Promise<boolean> | boolean
   }
 
-  const { filters, matched, total, onChange, onShare }: Props = $props()
+  const { filters, orgs, matched, total, onChange, onShare }: Props = $props()
 
   let shared = $state(false)
   let sharedTimer: ReturnType<typeof setTimeout> | null = null
@@ -47,6 +48,16 @@
     onChange({ ...filters, [key]: cycleTriState(filters[key]) })
   }
 
+  function toggleOrg(name: string) {
+    const cycled = cycleTriState(filters.orgs[name] ?? null)
+    const next: Record<string, TriState> = {}
+    for (const [key, value] of Object.entries(filters.orgs)) {
+      if (key !== name && value !== null) next[key] = value
+    }
+    if (cycled !== null) next[name] = cycled
+    onChange({ ...filters, orgs: next })
+  }
+
   function parseAge(raw: string): number | null {
     if (raw === '') return null
     const n = Number(raw)
@@ -70,6 +81,26 @@
   class="my-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-[var(--color-border)] py-2 text-[12px]"
 >
   <span class="text-[var(--color-fg-dim)]">▸ filter</span>
+
+  {#if orgs.length > 1}
+    {#each orgs as org (org)}
+      {@const state = filters.orgs[org] ?? null}
+      <button
+        type="button"
+        onclick={() => {
+          toggleOrg(org)
+        }}
+        class="border px-2 py-0.5 hover:border-[var(--color-accent)]"
+        style:color="var({colorVar(state)})"
+        style:border-color="var({colorVar(state)})"
+        title="org: {org}"
+      >
+        <span class="font-bold">{glyph(state)}</span>
+        <span class="ml-1 text-[var(--color-fg-dim)]">{org}</span>
+      </button>
+    {/each}
+    <span class="text-[var(--color-border-bright)]">·</span>
+  {/if}
 
   {#each [{ key: 'readyForReview' as const, label: 'ready' }, { key: 'mine' as const, label: 'mine' }, { key: 'fromMaintainer' as const, label: 'maintainer' }, { key: 'requestedFromMe' as const, label: 'requested' }, { key: 'reviewedByMe' as const, label: 'reviewed' }] as chip (chip.key)}
     {@const state = filters[chip.key]}

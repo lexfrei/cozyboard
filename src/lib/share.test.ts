@@ -41,6 +41,29 @@ describe('serializeShareableState', () => {
   })
 })
 
+describe('serializeShareableState — implicit org context', () => {
+  it('emits explicit filter.orgs when set', () => {
+    const params = serializeShareableState(
+      { filters: filters({ orgs: { cozystack: true, 'aenix-io': false } }), query: '' },
+      ['cozystack', 'aenix-io', 'other'],
+    )
+    expect(params.getAll('org')).toEqual(['aenix-io:f', 'cozystack:t'])
+  })
+
+  it('falls back to context orgs (all include) when filter.orgs is empty', () => {
+    const params = serializeShareableState(
+      { filters: filters(), query: '' },
+      ['cozystack', 'aenix-io'],
+    )
+    expect(params.getAll('org')).toEqual(['aenix-io:t', 'cozystack:t'])
+  })
+
+  it('emits no org param when filter is empty and context is empty', () => {
+    const params = serializeShareableState({ filters: filters(), query: '' }, [])
+    expect(params.getAll('org')).toEqual([])
+  })
+})
+
 describe('parseShareableState', () => {
   it('returns null on an empty query string', () => {
     expect(parseShareableState(new URLSearchParams(''))).toBeNull()
@@ -56,6 +79,7 @@ describe('parseShareableState', () => {
         requestedFromMe: true,
         minAgeDays: 5,
         maxAgeDays: 30,
+        orgs: { cozystack: true },
         labels: { 'area/apps': true, 'kind/bug': false },
       }),
       query: 'hello world',
