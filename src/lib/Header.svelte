@@ -41,7 +41,7 @@
       aria-label={musicEnabled ? 'pause music' : 'play music'}
       title={musicEnabled ? 'pause music' : 'play music'}
     >
-      {musicEnabled ? '⏸' : '▶'}
+      {musicEnabled ? '‖' : '►'}
     </button>
 
     <button
