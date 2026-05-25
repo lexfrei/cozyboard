@@ -5,7 +5,7 @@
   import Spinner from './lib/Spinner.svelte'
   import SettingsDrawer from './lib/SettingsDrawer.svelte'
   import { loadSettings, saveSettings, type Settings } from './lib/storage'
-  import { fetchOpenPRs, GitHubError } from './lib/github'
+  import { fetchOpenPRs, fetchViewer, GitHubError } from './lib/github'
   import type { RepoGroup } from './lib/types'
 
   type Status =
@@ -18,6 +18,26 @@
   let settingsOpen = $state(false)
   let status = $state<Status>({ kind: 'awaiting-config' })
   let reloadTick = $state(0)
+  let viewer = $state<string | null>(null)
+
+  $effect(() => {
+    const token = settings.token
+    if (token === null) {
+      viewer = null
+      return
+    }
+    const controller = new AbortController()
+    void (async () => {
+      try {
+        viewer = await fetchViewer(token, controller.signal)
+      } catch {
+        viewer = null
+      }
+    })()
+    return () => {
+      controller.abort()
+    }
+  })
 
   $effect(() => {
     const token = settings.token
@@ -76,7 +96,7 @@
 
 <div class="crt min-h-screen">
   <Header
-    user={settings.token === null ? null : 'authenticated'}
+    user={viewer}
     orgs={settings.orgs}
     musicEnabled={settings.musicEnabled}
     onToggleSettings={toggleSettings}

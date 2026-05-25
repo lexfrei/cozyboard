@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Settings } from './storage'
+  import LoginPanel from './LoginPanel.svelte'
 
   interface Props {
     open: boolean
@@ -12,22 +13,34 @@
 
   let token = $state('')
   let orgs = $state<string[]>([])
+  let manualOpen = $state(false)
 
   $effect(() => {
     if (open) {
       token = settings.token ?? ''
       orgs = settings.orgs.length === 0 ? [''] : [...settings.orgs]
+      manualOpen = false
     }
   })
 
   function commit(event: SubmitEvent) {
     event.preventDefault()
+    persist()
+    onClose()
+  }
+
+  function persist() {
     const cleaned = orgs.map((o) => o.trim()).filter((o) => o.length > 0)
     onSave({
       ...settings,
       token: token.trim() === '' ? null : token.trim(),
       orgs: cleaned,
     })
+  }
+
+  function applyDeviceFlowToken(next: string) {
+    token = next
+    persist()
     onClose()
   }
 
@@ -73,6 +86,27 @@
     </div>
 
     <form onsubmit={commit} class="flex flex-1 flex-col gap-4">
+      <section class="flex flex-col gap-1">
+        <span class="text-[var(--color-fg-dim)]">▸ authentication</span>
+        {#if settings.token}
+          <div
+            class="flex items-baseline justify-between border border-[var(--color-fg-dim)] px-2 py-1"
+          >
+            <span class="text-[var(--color-accent)]">✓ logged in</span>
+            <button
+              type="button"
+              onclick={() => {
+                token = ''
+                persist()
+              }}
+              class="text-[var(--color-fg-dim)] hover:text-[var(--color-err)]">log out</button
+            >
+          </div>
+        {:else}
+          <LoginPanel onAuthenticated={applyDeviceFlowToken} />
+        {/if}
+      </section>
+
       <fieldset class="flex flex-col gap-1">
         <legend class="text-[var(--color-fg-dim)]">▸ github orgs</legend>
         {#each orgs as org, i (i)}
@@ -106,32 +140,38 @@
         >
       </fieldset>
 
-      <label class="flex flex-col gap-1">
-        <span class="text-[var(--color-fg-dim)]"
-          >▸ github token <span class="text-[var(--color-info)]"
-            >[fine-grained PAT, read:org + repo]</span
-          ></span
+      <section class="flex flex-col gap-1">
+        <button
+          type="button"
+          onclick={() => {
+            manualOpen = !manualOpen
+          }}
+          class="self-start text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]"
         >
-        <div class="flex gap-1">
-          <input
-            type="password"
-            bind:value={token}
-            class="flex-1 border border-[var(--color-border-bright)] bg-[var(--color-bg)] px-2 py-1 text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-none"
-            spellcheck="false"
-            autocomplete="off"
-            placeholder="github_pat_..."
-          />
-          <button
-            type="button"
-            onclick={clearToken}
-            class="border border-[var(--color-border-bright)] px-2 text-[var(--color-fg)] hover:border-[var(--color-err)] hover:text-[var(--color-err)]"
-            aria-label="clear token">✗</button
+          {manualOpen ? '▼' : '▶'} manual token (advanced)
+        </button>
+        {#if manualOpen}
+          <div class="flex gap-1">
+            <input
+              type="password"
+              bind:value={token}
+              class="flex-1 border border-[var(--color-border-bright)] bg-[var(--color-bg)] px-2 py-1 text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-none"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="github_pat_..."
+            />
+            <button
+              type="button"
+              onclick={clearToken}
+              class="border border-[var(--color-border-bright)] px-2 text-[var(--color-fg)] hover:border-[var(--color-err)] hover:text-[var(--color-err)]"
+              aria-label="clear token">✗</button
+            >
+          </div>
+          <span class="text-[var(--color-fg-dim)] text-[11px]"
+            >fine-grained PAT with read:org + repo · stored in localStorage</span
           >
-        </div>
-        <span class="text-[var(--color-fg-dim)] text-[11px]"
-          >stored in localStorage only · device-flow auth coming later</span
-        >
-      </label>
+        {/if}
+      </section>
 
       <div class="mt-auto flex justify-end gap-2 border-t border-[var(--color-border)] pt-3">
         <button

@@ -184,3 +184,28 @@ export async function fetchOpenPRs(
   const perOrg = await Promise.all(orgs.map((org) => fetchForOrg(token, org, signal)))
   return groupByRepo(perOrg.flat())
 }
+
+interface ViewerResponse {
+  data?: { viewer: { login: string } }
+  errors?: { message: string }[]
+}
+
+export async function fetchViewer(token: string, signal?: AbortSignal): Promise<string> {
+  const res = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: {
+      Authorization: `bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ query: '{ viewer { login } }' }),
+    signal,
+  })
+  if (res.status === 401) throw new GitHubError('invalid or expired token', 401)
+  if (!res.ok) throw new GitHubError(`http ${res.status.toString()}`, res.status)
+  const json = (await res.json()) as ViewerResponse
+  if (json.errors && json.errors.length > 0) {
+    throw new GitHubError(json.errors.map((e) => e.message).join('; '))
+  }
+  if (!json.data) throw new GitHubError('malformed viewer response')
+  return json.data.viewer.login
+}
