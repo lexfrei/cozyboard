@@ -17,9 +17,7 @@
   }
 </script>
 
-<section
-  class="mb-4 border border-[var(--color-border)] bg-[var(--color-bg-elev)] text-[12px]"
->
+<section class="mb-4 border border-[var(--color-border)] bg-[var(--color-bg-elev)] text-[12px]">
   <button
     type="button"
     onclick={toggle}

@@ -4,7 +4,8 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "target": "es2023",
     "module": "esnext",
-    "types": ["svelte", "vite/client"],
+    "types": ["svelte", "vite/client", "@types/bun"],
+    "noUncheckedIndexedAccess": true,
     "noEmit": true,
     /**
      * Typecheck JS in `.svelte` and `.js` files by default.
