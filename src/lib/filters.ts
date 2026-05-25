@@ -8,6 +8,7 @@ export interface Filters {
   mine: TriState
   fromMaintainer: TriState
   reviewedByMe: TriState
+  requestedFromMe: TriState
   minAgeDays: number | null
   maxAgeDays: number | null
   labels: Record<string, TriState>
@@ -18,6 +19,7 @@ export const EMPTY_FILTERS: Filters = {
   mine: null,
   fromMaintainer: null,
   reviewedByMe: null,
+  requestedFromMe: null,
   minAgeDays: null,
   maxAgeDays: null,
   labels: {},
@@ -57,6 +59,11 @@ export function isReviewedByMe(pr: PullRequest): boolean {
   return pr.viewerLatestReviewState !== null && pr.viewerLatestReviewState !== 'PENDING'
 }
 
+export function isRequestedFromMe(pr: PullRequest, viewer: string | null): boolean {
+  if (viewer === null) return false
+  return pr.reviewRequests.some((r) => r.login === viewer)
+}
+
 function ageDays(pr: PullRequest, now: number = Date.now()): number {
   const updated = new Date(pr.updatedAt).getTime()
   return (now - updated) / 86_400_000
@@ -77,6 +84,7 @@ export function passesFilters(
   if (!matchesTriState(filters.mine, isMine(pr, viewer))) return false
   if (!matchesTriState(filters.fromMaintainer, isFromMaintainer(pr))) return false
   if (!matchesTriState(filters.reviewedByMe, isReviewedByMe(pr))) return false
+  if (!matchesTriState(filters.requestedFromMe, isRequestedFromMe(pr, viewer))) return false
   if (filters.minAgeDays !== null || filters.maxAgeDays !== null) {
     const age = ageDays(pr, now)
     if (filters.minAgeDays !== null && age < filters.minAgeDays) return false
@@ -99,6 +107,7 @@ export function isFilterActive(filters: Filters): boolean {
     filters.mine !== null ||
     filters.fromMaintainer !== null ||
     filters.reviewedByMe !== null ||
+    filters.requestedFromMe !== null ||
     filters.minAgeDays !== null ||
     filters.maxAgeDays !== null ||
     anyLabelSet(filters.labels)

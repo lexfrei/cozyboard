@@ -22,7 +22,12 @@
     return '--color-fg-dim'
   }
 
-  type ToggleKey = 'readyForReview' | 'mine' | 'fromMaintainer' | 'reviewedByMe'
+  type ToggleKey =
+    | 'readyForReview'
+    | 'mine'
+    | 'fromMaintainer'
+    | 'reviewedByMe'
+    | 'requestedFromMe'
 
   function toggle(key: ToggleKey) {
     onChange({ ...filters, [key]: cycleTriState(filters[key]) })
@@ -52,7 +57,7 @@
 >
   <span class="text-[var(--color-fg-dim)]">▸ filter</span>
 
-  {#each [{ key: 'readyForReview' as const, label: 'ready' }, { key: 'mine' as const, label: 'mine' }, { key: 'fromMaintainer' as const, label: 'maintainer' }, { key: 'reviewedByMe' as const, label: 'reviewed' }] as chip (chip.key)}
+  {#each [{ key: 'readyForReview' as const, label: 'ready' }, { key: 'mine' as const, label: 'mine' }, { key: 'fromMaintainer' as const, label: 'maintainer' }, { key: 'requestedFromMe' as const, label: 'requested' }, { key: 'reviewedByMe' as const, label: 'reviewed' }] as chip (chip.key)}
     {@const state = filters[chip.key]}
     <button
       type="button"
