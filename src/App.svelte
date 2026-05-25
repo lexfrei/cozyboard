@@ -6,32 +6,49 @@
   import Spinner from './lib/Spinner.svelte'
   import SettingsDrawer from './lib/SettingsDrawer.svelte'
   import { loadSettings, saveSettings, type Settings } from './lib/storage'
-  import { FIXTURE_GROUPS } from './lib/fixture'
+  import { fetchOpenPRs, GitHubError } from './lib/github'
   import type { RepoGroup } from './lib/types'
 
   type Status =
     | { kind: 'awaiting-config' }
     | { kind: 'loading'; message: string }
-    | { kind: 'ready'; groups: RepoGroup[]; totalPRs: number }
+    | { kind: 'ready'; groups: RepoGroup[]; totalPRs: number; fetchedAt: number }
     | { kind: 'error'; message: string }
 
   let settings = $state<Settings>(loadSettings())
   let settingsOpen = $state(false)
   let status = $state<Status>({ kind: 'awaiting-config' })
+  let reloadTick = $state(0)
 
   $effect(() => {
-    if (settings.token === null) {
+    const token = settings.token
+    const org = settings.org
+    // Force re-run on reload button click.
+    void reloadTick
+    if (token === null) {
       status = { kind: 'awaiting-config' }
       return
     }
-    status = { kind: 'loading', message: 'fetching pull requests' }
-    const t = setTimeout(() => {
-      const groups = FIXTURE_GROUPS
-      const total = groups.reduce((n, g) => n + g.pullRequests.length, 0)
-      status = { kind: 'ready', groups, totalPRs: total }
-    }, 1200)
+    status = { kind: 'loading', message: `fetching open prs from org:${org}` }
+    const controller = new AbortController()
+    void (async () => {
+      try {
+        const groups = await fetchOpenPRs(token, org, controller.signal)
+        const totalPRs = groups.reduce((n, g) => n + g.pullRequests.length, 0)
+        status = { kind: 'ready', groups, totalPRs, fetchedAt: Date.now() }
+      } catch (err) {
+        if (controller.signal.aborted) return
+        const message =
+          err instanceof GitHubError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'unknown error'
+        status = { kind: 'error', message }
+      }
+    })()
     return () => {
-      clearTimeout(t)
+      controller.abort()
     }
   })
 
@@ -48,11 +65,15 @@
     settings = next
     saveSettings(next)
   }
+
+  function reload() {
+    reloadTick++
+  }
 </script>
 
 <div class="crt min-h-screen">
   <Header
-    user={settings.token === null ? null : 'lexfrei'}
+    user={settings.token === null ? null : 'authenticated'}
     org={settings.org}
     musicEnabled={settings.musicEnabled}
     onToggleSettings={toggleSettings}
@@ -78,18 +99,32 @@
       </div>
     {:else if status.kind === 'error'}
       <div class="border border-[var(--color-err)] p-3 text-[var(--color-err)]">
-        <span class="font-bold">✗ error</span>
-        <p>{status.message}</p>
+        <div class="flex items-baseline justify-between">
+          <span class="font-bold">✗ error</span>
+          <button
+            type="button"
+            class="border border-[var(--color-err)] px-2 hover:bg-[var(--color-err)] hover:text-[var(--color-bg)]"
+            onclick={reload}>↻ retry</button
+          >
+        </div>
+        <p class="mt-2">{status.message}</p>
       </div>
     {:else if status.kind === 'ready'}
       {@const groups = status.groups}
       {@const totalPRs = status.totalPRs}
       <div class="mb-4 flex items-baseline justify-between text-[var(--color-fg-dim)]">
         <span
-          >▸ {groups.length} repositories <span class="text-[var(--color-border-bright)]">·</span>
+          >▸ {groups.length} repositories
+          <span class="text-[var(--color-border-bright)]">·</span>
           {totalPRs} open PRs</span
         >
-        <span class="text-[11px]">[fixture data — wire GraphQL next]</span>
+        <button
+          type="button"
+          onclick={reload}
+          class="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-accent)]"
+          title="reload"
+          aria-label="reload">↻ reload</button
+        >
       </div>
 
       <PRColumnHeader />
