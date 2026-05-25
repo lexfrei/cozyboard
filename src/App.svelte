@@ -77,7 +77,34 @@
     else player.stop()
     setMusicEnabled(next)
   }
+
+  function handleKeyDown(event: KeyboardEvent) {
+    const target = event.target
+    const inEditable =
+      target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+    if (event.key === '/' && !inEditable && !event.metaKey && !event.ctrlKey) {
+      const input = document.querySelector<HTMLInputElement>('input[type=search]')
+      if (input !== null) {
+        event.preventDefault()
+        input.focus()
+        input.select()
+      }
+      return
+    }
+    if (event.key === 'Escape' && inEditable) {
+      if (target instanceof HTMLInputElement && target.type === 'search') target.value = ''
+      ;(target as HTMLElement).blur()
+      titleQuery = ''
+      return
+    }
+    if (event.key === 'r' && !inEditable && !event.metaKey && !event.ctrlKey) {
+      event.preventDefault()
+      refresh()
+    }
+  }
 </script>
+
+<svelte:window onkeydown={handleKeyDown} />
 
 <div class="crt min-h-screen">
   <Header
