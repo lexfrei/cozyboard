@@ -1,0 +1,118 @@
+# Manual dev deploy to the homelab cluster.
+# kubectl --context homelab apply --filename deploy/manifest.yaml
+# kubectl --context homelab --namespace cozyboard rollout restart deployment/cozyboard
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cozyboard
+  labels:
+    app.kubernetes.io/name: cozyboard
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cozyboard
+  namespace: cozyboard
+  labels:
+    app.kubernetes.io/name: cozyboard
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cozyboard
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cozyboard
+    spec:
+      containers:
+        - name: app
+          image: oven/bun:1-alpine
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              apk add --no-cache git
+              cd /tmp
+              rm -rf board
+              git clone --depth=1 --branch=main https://github.com/lexfrei/cozyboard board
+              cd board
+              bun install --frozen-lockfile
+              bun run build
+              exec bun run preview
+          ports:
+            - containerPort: 8080
+              name: http
+          startupProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+            periodSeconds: 30
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 2000m
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cozyboard
+  namespace: cozyboard
+  labels:
+    app.kubernetes.io/name: cozyboard
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: cozyboard
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: cozyboard
+  namespace: cozyboard
+  labels:
+    app.kubernetes.io/name: cozyboard
+  annotations:
+    external-dns.alpha.kubernetes.io/cloudflare-proxied: "true"
+spec:
+  hostnames:
+    - board.lex.la
+  parentRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: cloudflare-tunnel
+      namespace: cloudflare-tunnel-system
+      sectionName: https
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - group: ""
+          kind: Service
+          name: cozyboard
+          port: 80
