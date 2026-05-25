@@ -6,9 +6,23 @@
     matched: number
     total: number
     onChange: (next: Filters) => void
+    onShare: () => Promise<boolean> | boolean
   }
 
-  const { filters, matched, total, onChange }: Props = $props()
+  const { filters, matched, total, onChange, onShare }: Props = $props()
+
+  let shared = $state(false)
+  let sharedTimer: ReturnType<typeof setTimeout> | null = null
+
+  async function handleShare() {
+    const ok = await onShare()
+    if (!ok) return
+    shared = true
+    if (sharedTimer !== null) clearTimeout(sharedTimer)
+    sharedTimer = setTimeout(() => {
+      shared = false
+    }, 1500)
+  }
 
   function glyph(state: TriState): string {
     if (state === true) return '✓'
@@ -103,6 +117,15 @@
     <span class="text-[var(--color-fg)]">{matched}</span>/<span>{total}</span> shown
   </span>
 
+  <button
+    type="button"
+    onclick={() => {
+      void handleShare()
+    }}
+    class="text-[var(--color-fg-dim)] hover:text-[var(--color-accent)]"
+    style:color={shared ? 'var(--color-accent)' : undefined}
+    title="copy a link to this filter set">{shared ? '✓ copied' : '⧉ share'}</button
+  >
   <button
     type="button"
     onclick={reset}

@@ -11,6 +11,7 @@
   import { fetchViewer } from './lib/github'
   import { deriveLabelFacets } from './lib/labels'
   import { player } from './lib/music'
+  import { parseShareableState, serializeShareableState } from './lib/share'
   import { POLL_INTERVAL_MS, pulls, refresh, reset, start, stop } from './lib/state/pulls.svelte'
   import {
     setFilters,
@@ -24,6 +25,13 @@
   let settingsOpen = $state(false)
   let viewer = $state<string | null>(null)
   let titleQuery = $state('')
+
+  // One-shot: if the URL carries a share-link, override filters and query.
+  const shared = parseShareableState(new URLSearchParams(window.location.search))
+  if (shared !== null) {
+    setFilters(shared.filters)
+    titleQuery = shared.query
+  }
 
   function matchesQuery(title: string, author: string, query: string): boolean {
     const q = query.trim().toLowerCase()
@@ -76,6 +84,21 @@
     if (next) void player.start()
     else player.stop()
     setMusicEnabled(next)
+  }
+
+  async function shareFilters(): Promise<boolean> {
+    const params = serializeShareableState({ filters: settings.filters, query: titleQuery })
+    const queryString = params.toString()
+    const url =
+      `${window.location.origin}${window.location.pathname}` +
+      (queryString === '' ? '' : `?${queryString}`)
+    window.history.replaceState({}, '', url)
+    try {
+      await navigator.clipboard.writeText(url)
+      return true
+    } catch {
+      return false
+    }
   }
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -198,6 +221,7 @@
         {matched}
         total={pulls.totalPRs}
         onChange={setFilters}
+        onShare={shareFilters}
       />
 
       <LabelFacets
