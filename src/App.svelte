@@ -3,24 +3,22 @@
   import Header from './lib/Header.svelte'
   import Legend from './lib/Legend.svelte'
   import RepoGroupView from './lib/RepoGroup.svelte'
-  import Spinner from './lib/Spinner.svelte'
   import SettingsDrawer from './lib/SettingsDrawer.svelte'
-  import { passesFilters, type Filters } from './lib/filters'
-  import { loadSettings, saveSettings, type Settings } from './lib/storage'
-  import { fetchOpenPRs, fetchViewer, GitHubError } from './lib/github'
+  import Spinner from './lib/Spinner.svelte'
+  import Ticker from './lib/Ticker.svelte'
+  import { passesFilters } from './lib/filters'
+  import { fetchViewer } from './lib/github'
   import { player } from './lib/music'
-  import type { RepoGroup } from './lib/types'
+  import { pulls, refresh, reset, start, stop } from './lib/state/pulls.svelte'
+  import {
+    setFilters,
+    setMusicEnabled,
+    setOrgs,
+    setToken,
+    settings,
+  } from './lib/state/settings.svelte'
 
-  type Status =
-    | { kind: 'awaiting-config' }
-    | { kind: 'loading'; message: string }
-    | { kind: 'ready'; groups: RepoGroup[]; totalPRs: number; fetchedAt: number }
-    | { kind: 'error'; message: string }
-
-  let settings = $state<Settings>(loadSettings())
   let settingsOpen = $state(false)
-  let status = $state<Status>({ kind: 'awaiting-config' })
-  let reloadTick = $state(0)
   let viewer = $state<string | null>(null)
 
   $effect(() => {
@@ -34,10 +32,7 @@
       try {
         const login = await fetchViewer(token, controller.signal)
         viewer = login
-        if (settings.orgs.length === 0) {
-          settings = { ...settings, orgs: [login] }
-          saveSettings(settings)
-        }
+        if (settings.orgs.length === 0) setOrgs([login])
       } catch {
         viewer = null
       }
@@ -50,36 +45,13 @@
   $effect(() => {
     const token = settings.token
     const orgs = settings.orgs
-    // Force re-run on reload button click.
-    void reloadTick
-    if (token === null) {
-      status = { kind: 'awaiting-config' }
+    if (token === null || orgs.length === 0) {
+      reset()
       return
     }
-    if (orgs.length === 0) {
-      status = { kind: 'error', message: 'no orgs configured — add one in settings' }
-      return
-    }
-    status = { kind: 'loading', message: `fetching open prs from ${orgs.join(', ')}` }
-    const controller = new AbortController()
-    void (async () => {
-      try {
-        const groups = await fetchOpenPRs(token, orgs, controller.signal)
-        const totalPRs = groups.reduce((n, g) => n + g.pullRequests.length, 0)
-        status = { kind: 'ready', groups, totalPRs, fetchedAt: Date.now() }
-      } catch (err) {
-        if (controller.signal.aborted) return
-        const message =
-          err instanceof GitHubError
-            ? err.message
-            : err instanceof Error
-              ? err.message
-              : 'unknown error'
-        status = { kind: 'error', message }
-      }
-    })()
+    start(token, [...orgs])
     return () => {
-      controller.abort()
+      stop()
     }
   })
 
@@ -89,30 +61,10 @@
 
   function toggleMusic() {
     const next = !settings.musicEnabled
-    // Start/stop inside the click handler so Safari sees the user gesture
-    // before any await boundary; otherwise AudioContext.resume() silently
-    // fails on iOS/macOS Safari.
-    if (next) {
-      void player.start()
-    } else {
-      player.stop()
-    }
-    settings = { ...settings, musicEnabled: next }
-    saveSettings(settings)
-  }
-
-  function applySettings(next: Settings) {
-    settings = next
-    saveSettings(next)
-  }
-
-  function applyFilters(next: Filters) {
-    settings = { ...settings, filters: next }
-    saveSettings(settings)
-  }
-
-  function reload() {
-    reloadTick++
+    // Sync inside the click handler so Safari sees the user gesture.
+    if (next) void player.start()
+    else player.stop()
+    setMusicEnabled(next)
   }
 </script>
 
@@ -126,7 +78,7 @@
   />
 
   <main class="mx-auto max-w-5xl px-4 py-6">
-    {#if status.kind === 'awaiting-config'}
+    {#if settings.token === null}
       <pre class="text-[var(--color-fg)]">
 &gt; awaiting configuration
 &gt; no github token in localStorage
@@ -135,28 +87,35 @@
 &gt;
 &gt; <span class="cursor"></span>
       </pre>
-    {:else if status.kind === 'loading'}
+    {:else if settings.orgs.length === 0}
+      <div class="border border-[var(--color-warn)] p-3 text-[var(--color-warn)]">
+        ▸ no orgs configured — add one in <button
+          type="button"
+          class="underline hover:text-[var(--color-accent)]"
+          onclick={toggleSettings}>settings</button
+        >
+      </div>
+    {:else if pulls.status === 'loading'}
       <div class="flex items-baseline gap-2 text-[var(--color-fg)]">
         <span class="text-[var(--color-fg-dim)]">[</span><Spinner /><span
           class="text-[var(--color-fg-dim)]">]</span
         >
-        <span>{status.message}<span class="cursor"></span></span>
+        <span>fetching open prs from {settings.orgs.join(', ')}<span class="cursor"></span></span>
       </div>
-    {:else if status.kind === 'error'}
+    {:else if pulls.status === 'error' && pulls.groups.length === 0}
       <div class="border border-[var(--color-err)] p-3 text-[var(--color-err)]">
         <div class="flex items-baseline justify-between">
           <span class="font-bold">✗ error</span>
           <button
             type="button"
             class="border border-[var(--color-err)] px-2 hover:bg-[var(--color-err)] hover:text-[var(--color-bg)]"
-            onclick={reload}>↻ retry</button
+            onclick={refresh}>↻ retry</button
           >
         </div>
-        <p class="mt-2">{status.message}</p>
+        <p class="mt-2">{pulls.lastError ?? 'unknown error'}</p>
       </div>
-    {:else if status.kind === 'ready'}
-      {@const totalPRs = status.totalPRs}
-      {@const filteredGroups = status.groups
+    {:else}
+      {@const filteredGroups = pulls.groups
         .map((g) => ({
           ...g,
           pullRequests: g.pullRequests.filter((pr) => passesFilters(pr, settings.filters, viewer)),
@@ -165,20 +124,19 @@
       {@const matched = filteredGroups.reduce((n, g) => n + g.pullRequests.length, 0)}
       <div class="mb-1 flex items-baseline justify-between text-[var(--color-fg-dim)]">
         <span
-          >▸ {filteredGroups.length}/{status.groups.length} repositories
+          >▸ {filteredGroups.length}/{pulls.groups.length} repositories
           <span class="text-[var(--color-border-bright)]">·</span>
-          {matched}/{totalPRs} open PRs</span
+          {matched}/{pulls.totalPRs} open PRs</span
         >
-        <button
-          type="button"
-          onclick={reload}
-          class="text-[11px] text-[var(--color-fg-dim)] hover:text-[var(--color-accent)]"
-          title="reload"
-          aria-label="reload">↻ reload</button
-        >
+        <Ticker lastFetchedAt={pulls.lastFetchedAt} onClick={refresh} />
       </div>
 
-      <FilterBar filters={settings.filters} {matched} total={totalPRs} onChange={applyFilters} />
+      <FilterBar
+        filters={settings.filters}
+        {matched}
+        total={pulls.totalPRs}
+        onChange={setFilters}
+      />
 
       {#each filteredGroups as group (group.nameWithOwner)}
         <RepoGroupView {group} />
@@ -190,5 +148,5 @@
     {/if}
   </main>
 
-  <SettingsDrawer open={settingsOpen} {settings} onClose={toggleSettings} onSave={applySettings} />
+  <SettingsDrawer open={settingsOpen} onClose={toggleSettings} {setToken} {setOrgs} />
 </div>

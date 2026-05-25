@@ -1,23 +1,23 @@
 <script lang="ts">
-  import type { Settings } from './storage'
   import LoginPanel from './LoginPanel.svelte'
+  import { settings } from './state/settings.svelte'
 
   interface Props {
     open: boolean
-    settings: Settings
     onClose: () => void
-    onSave: (next: Settings) => void
+    setToken: (token: string | null) => void
+    setOrgs: (orgs: string[]) => void
   }
 
-  const { open, settings, onClose, onSave }: Props = $props()
+  const { open, onClose, setToken, setOrgs }: Props = $props()
 
-  let token = $state('')
+  let manualToken = $state('')
   let orgs = $state<string[]>([])
   let manualOpen = $state(false)
 
   $effect(() => {
     if (open) {
-      token = settings.token ?? ''
+      manualToken = settings.token ?? ''
       orgs = settings.orgs.length === 0 ? [''] : [...settings.orgs]
       manualOpen = false
     }
@@ -25,27 +25,27 @@
 
   function commit(event: SubmitEvent) {
     event.preventDefault()
-    persist()
-    onClose()
-  }
-
-  function persist() {
     const cleaned = orgs.map((o) => o.trim()).filter((o) => o.length > 0)
-    onSave({
-      ...settings,
-      token: token.trim() === '' ? null : token.trim(),
-      orgs: cleaned,
-    })
+    setOrgs(cleaned)
+    if (manualToken.trim() === '') {
+      setToken(null)
+    } else if (manualToken !== (settings.token ?? '')) {
+      setToken(manualToken.trim())
+    }
+    onClose()
   }
 
   function applyDeviceFlowToken(next: string) {
-    token = next
-    persist()
+    setToken(next)
     onClose()
   }
 
-  function clearToken() {
-    token = ''
+  function logOut() {
+    setToken(null)
+  }
+
+  function clearManualToken() {
+    manualToken = ''
   }
 
   function addOrg() {
@@ -95,10 +95,7 @@
             <span class="text-[var(--color-accent)]">✓ logged in</span>
             <button
               type="button"
-              onclick={() => {
-                token = ''
-                persist()
-              }}
+              onclick={logOut}
               class="text-[var(--color-fg-dim)] hover:text-[var(--color-err)]">log out</button
             >
           </div>
@@ -154,7 +151,7 @@
           <div class="flex gap-1">
             <input
               type="password"
-              bind:value={token}
+              bind:value={manualToken}
               class="flex-1 border border-[var(--color-border-bright)] bg-[var(--color-bg)] px-2 py-1 text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-none"
               spellcheck="false"
               autocomplete="off"
@@ -162,7 +159,7 @@
             />
             <button
               type="button"
-              onclick={clearToken}
+              onclick={clearManualToken}
               class="border border-[var(--color-border-bright)] px-2 text-[var(--color-fg)] hover:border-[var(--color-err)] hover:text-[var(--color-err)]"
               aria-label="clear token">✗</button
             >
