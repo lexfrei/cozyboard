@@ -43,10 +43,7 @@ export function deriveLabelFacets(groups: RepoGroup[]): LabelFacet[] {
   return facets
 }
 
-export function passesLabelFilter(
-  pr: PullRequest,
-  labelStates: Record<string, TriState>,
-): boolean {
+export function passesLabelFilter(pr: PullRequest, labelStates: Record<string, TriState>): boolean {
   const prLabels = new Set(pr.labels.map((l) => l.name))
   const includesByNs = new Map<string, string[]>()
 

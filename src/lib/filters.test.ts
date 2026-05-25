@@ -146,26 +146,24 @@ describe('passesFilters', () => {
   describe('requestedFromMe', () => {
     it('= true keeps only PRs where viewer is a requested reviewer', () => {
       const f = filters({ requestedFromMe: true })
-      expect(
-        passesFilters(pr({ reviewRequests: [{ login: 'bob' }] }), f, 'bob'),
-      ).toBe(true)
-      expect(
-        passesFilters(pr({ reviewRequests: [{ login: 'alice' }] }), f, 'bob'),
-      ).toBe(false)
+      expect(passesFilters(pr({ reviewRequests: [{ login: 'bob' }] }), f, 'bob')).toBe(true)
+      expect(passesFilters(pr({ reviewRequests: [{ login: 'alice' }] }), f, 'bob')).toBe(false)
       expect(passesFilters(pr({ reviewRequests: [] }), f, 'bob')).toBe(false)
     })
 
     it('= false hides PRs where viewer is requested', () => {
       const f = filters({ requestedFromMe: false })
-      expect(
-        passesFilters(pr({ reviewRequests: [{ login: 'bob' }] }), f, 'bob'),
-      ).toBe(false)
+      expect(passesFilters(pr({ reviewRequests: [{ login: 'bob' }] }), f, 'bob')).toBe(false)
       expect(passesFilters(pr({ reviewRequests: [] }), f, 'bob')).toBe(true)
     })
 
     it('without a viewer drops nothing on its own (= false) but matches nothing on = true', () => {
       expect(
-        passesFilters(pr({ reviewRequests: [{ login: 'bob' }] }), filters({ requestedFromMe: true }), null),
+        passesFilters(
+          pr({ reviewRequests: [{ login: 'bob' }] }),
+          filters({ requestedFromMe: true }),
+          null,
+        ),
       ).toBe(false)
     })
   })

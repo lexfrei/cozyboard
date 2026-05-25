@@ -31,12 +31,7 @@ export type AuthorAssociation =
   | 'MANNEQUIN'
   | 'NONE'
 
-export type ReviewState =
-  | 'APPROVED'
-  | 'CHANGES_REQUESTED'
-  | 'COMMENTED'
-  | 'DISMISSED'
-  | 'PENDING'
+export type ReviewState = 'APPROVED' | 'CHANGES_REQUESTED' | 'COMMENTED' | 'DISMISSED' | 'PENDING'
 
 export interface PullRequest {
   id: string

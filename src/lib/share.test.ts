@@ -51,10 +51,10 @@ describe('serializeShareableState — implicit org context', () => {
   })
 
   it('falls back to context orgs (all include) when filter.orgs is empty', () => {
-    const params = serializeShareableState(
-      { filters: filters(), query: '' },
-      ['cozystack', 'aenix-io'],
-    )
+    const params = serializeShareableState({ filters: filters(), query: '' }, [
+      'cozystack',
+      'aenix-io',
+    ])
     expect(params.getAll('org')).toEqual(['aenix-io:t', 'cozystack:t'])
   })
 

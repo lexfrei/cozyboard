@@ -22,11 +22,7 @@
   <div
     class="flex items-baseline gap-2 border-b border-[var(--color-border)] px-2 py-1 hover:bg-[var(--color-bg-elev)]"
   >
-    <button
-      type="button"
-      onclick={toggle}
-      class="flex flex-1 items-baseline gap-2 text-left"
-    >
+    <button type="button" onclick={toggle} class="flex flex-1 items-baseline gap-2 text-left">
       <span class="text-[var(--color-fg-bright)] w-[1ch]">{collapsed ? '▶' : '▼'}</span>
       <span class="text-[var(--color-fg)]">{group.nameWithOwner}</span>
       <span class="text-[var(--color-fg-dim)]"

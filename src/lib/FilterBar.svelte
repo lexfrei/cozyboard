@@ -37,12 +37,7 @@
     return '--color-fg-dim'
   }
 
-  type ToggleKey =
-    | 'readyForReview'
-    | 'mine'
-    | 'fromMaintainer'
-    | 'reviewedByMe'
-    | 'requestedFromMe'
+  type ToggleKey = 'readyForReview' | 'mine' | 'fromMaintainer' | 'reviewedByMe' | 'requestedFromMe'
 
   function toggle(key: ToggleKey) {
     onChange({ ...filters, [key]: cycleTriState(filters[key]) })
@@ -77,89 +72,91 @@
   }
 </script>
 
-<section
-  class="my-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-[var(--color-border)] py-2 text-[12px]"
->
-  <span class="text-[var(--color-fg-dim)]">▸ filter</span>
-
+<section class="my-2 flex flex-col gap-1 border-b border-[var(--color-border)] py-2 text-[12px]">
   {#if orgs.length > 1}
-    {#each orgs as org (org)}
-      {@const state = filters.orgs[org] ?? null}
+    <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+      <span class="min-w-[6ch] text-[var(--color-fg-dim)]">▸ orgs</span>
+      {#each orgs as org (org)}
+        {@const state = filters.orgs[org] ?? null}
+        <button
+          type="button"
+          onclick={() => {
+            toggleOrg(org)
+          }}
+          class="border px-2 py-0.5 hover:border-[var(--color-accent)]"
+          style:color="var({colorVar(state)})"
+          style:border-color="var({colorVar(state)})"
+          title="org: {org}"
+        >
+          <span class="font-bold">{glyph(state)}</span>
+          <span class="ml-1 text-[var(--color-fg-dim)]">{org}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
+
+  <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+    <span class="min-w-[6ch] text-[var(--color-fg-dim)]">▸ filter</span>
+
+    {#each [{ key: 'readyForReview' as const, label: 'ready' }, { key: 'mine' as const, label: 'mine' }, { key: 'fromMaintainer' as const, label: 'maintainer' }, { key: 'requestedFromMe' as const, label: 'requested' }, { key: 'reviewedByMe' as const, label: 'reviewed' }] as chip (chip.key)}
+      {@const state = filters[chip.key]}
       <button
         type="button"
         onclick={() => {
-          toggleOrg(org)
+          toggle(chip.key)
         }}
         class="border px-2 py-0.5 hover:border-[var(--color-accent)]"
         style:color="var({colorVar(state)})"
         style:border-color="var({colorVar(state)})"
-        title="org: {org}"
+        title="cycle: unset → include → exclude"
       >
         <span class="font-bold">{glyph(state)}</span>
-        <span class="ml-1 text-[var(--color-fg-dim)]">{org}</span>
+        <span class="ml-1 text-[var(--color-fg-dim)]">{chip.label}</span>
       </button>
     {/each}
-    <span class="text-[var(--color-border-bright)]">·</span>
-  {/if}
 
-  {#each [{ key: 'readyForReview' as const, label: 'ready' }, { key: 'mine' as const, label: 'mine' }, { key: 'fromMaintainer' as const, label: 'maintainer' }, { key: 'requestedFromMe' as const, label: 'requested' }, { key: 'reviewedByMe' as const, label: 'reviewed' }] as chip (chip.key)}
-    {@const state = filters[chip.key]}
+    <div
+      class="flex items-baseline gap-1 border border-[var(--color-border-bright)] px-2 py-0.5 text-[var(--color-fg-dim)] focus-within:border-[var(--color-accent)]"
+    >
+      <input
+        type="number"
+        min="1"
+        value={filters.minAgeDays ?? ''}
+        oninput={updateMinAge}
+        class="w-10 bg-transparent text-right text-[var(--color-fg)] focus:outline-none"
+        placeholder="0"
+        aria-label="min age in days"
+      />
+      <span>d ≤ age ≤</span>
+      <input
+        type="number"
+        min="1"
+        value={filters.maxAgeDays ?? ''}
+        oninput={updateMaxAge}
+        class="w-10 bg-transparent text-right text-[var(--color-fg)] focus:outline-none"
+        placeholder="∞"
+        aria-label="max age in days"
+      />
+      <span>d</span>
+    </div>
+
+    <span class="ml-auto text-[var(--color-fg-dim)]">
+      <span class="text-[var(--color-fg)]">{matched}</span>/<span>{total}</span> shown
+    </span>
+
     <button
       type="button"
       onclick={() => {
-        toggle(chip.key)
+        void handleShare()
       }}
-      class="border px-2 py-0.5 hover:border-[var(--color-accent)]"
-      style:color="var({colorVar(state)})"
-      style:border-color="var({colorVar(state)})"
-      title="cycle: unset → include → exclude"
+      class="text-[var(--color-fg-dim)] hover:text-[var(--color-accent)]"
+      style:color={shared ? 'var(--color-accent)' : undefined}
+      title="copy a link to this filter set">{shared ? '✓ copied' : '⧉ share'}</button
     >
-      <span class="font-bold">{glyph(state)}</span>
-      <span class="ml-1 text-[var(--color-fg-dim)]">{chip.label}</span>
-    </button>
-  {/each}
-
-  <div
-    class="flex items-baseline gap-1 border border-[var(--color-border-bright)] px-2 py-0.5 text-[var(--color-fg-dim)] focus-within:border-[var(--color-accent)]"
-  >
-    <input
-      type="number"
-      min="1"
-      value={filters.minAgeDays ?? ''}
-      oninput={updateMinAge}
-      class="w-10 bg-transparent text-right text-[var(--color-fg)] focus:outline-none"
-      placeholder="0"
-      aria-label="min age in days"
-    />
-    <span>d ≤ age ≤</span>
-    <input
-      type="number"
-      min="1"
-      value={filters.maxAgeDays ?? ''}
-      oninput={updateMaxAge}
-      class="w-10 bg-transparent text-right text-[var(--color-fg)] focus:outline-none"
-      placeholder="∞"
-      aria-label="max age in days"
-    />
-    <span>d</span>
+    <button
+      type="button"
+      onclick={reset}
+      class="text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]">reset</button
+    >
   </div>
-
-  <span class="ml-auto text-[var(--color-fg-dim)]">
-    <span class="text-[var(--color-fg)]">{matched}</span>/<span>{total}</span> shown
-  </span>
-
-  <button
-    type="button"
-    onclick={() => {
-      void handleShare()
-    }}
-    class="text-[var(--color-fg-dim)] hover:text-[var(--color-accent)]"
-    style:color={shared ? 'var(--color-accent)' : undefined}
-    title="copy a link to this filter set">{shared ? '✓ copied' : '⧉ share'}</button
-  >
-  <button
-    type="button"
-    onclick={reset}
-    class="text-[var(--color-fg-dim)] hover:text-[var(--color-fg)]">reset</button
-  >
 </section>

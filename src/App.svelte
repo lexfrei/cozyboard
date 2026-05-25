@@ -106,8 +106,7 @@
 
   function handleKeyDown(event: KeyboardEvent) {
     const target = event.target
-    const inEditable =
-      target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+    const inEditable = target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
     if (event.key === '/' && !inEditable && !event.metaKey && !event.ctrlKey) {
       const input = document.querySelector<HTMLInputElement>('input[type=search]')
       if (input !== null) {
