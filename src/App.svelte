@@ -18,6 +18,7 @@
     setOrgs,
     setToken,
     settings,
+    togglePinnedRepo,
   } from './lib/state/settings.svelte'
 
   let settingsOpen = $state(false)
@@ -117,12 +118,19 @@
         <p class="mt-2">{pulls.lastError ?? 'unknown error'}</p>
       </div>
     {:else}
+      {@const pinnedSet = new Set(settings.pinnedRepos)}
       {@const filteredGroups = pulls.groups
         .map((g) => ({
           ...g,
           pullRequests: g.pullRequests.filter((pr) => passesFilters(pr, settings.filters, viewer)),
         }))
-        .filter((g) => g.pullRequests.length > 0)}
+        .filter((g) => g.pullRequests.length > 0)
+        .sort((a, b) => {
+          const ap = pinnedSet.has(a.nameWithOwner) ? 0 : 1
+          const bp = pinnedSet.has(b.nameWithOwner) ? 0 : 1
+          if (ap !== bp) return ap - bp
+          return b.pullRequests.length - a.pullRequests.length
+        })}
       {@const matched = filteredGroups.reduce((n, g) => n + g.pullRequests.length, 0)}
       <div class="mb-1 flex items-baseline justify-between text-[var(--color-fg-dim)]">
         <span
@@ -149,7 +157,13 @@
       />
 
       {#each filteredGroups as group (group.nameWithOwner)}
-        <RepoGroupView {group} />
+        <RepoGroupView
+          {group}
+          pinned={pinnedSet.has(group.nameWithOwner)}
+          onTogglePin={() => {
+            togglePinnedRepo(group.nameWithOwner)
+          }}
+        />
       {/each}
 
       <div class="mt-6">

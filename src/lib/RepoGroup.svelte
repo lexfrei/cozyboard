@@ -5,9 +5,11 @@
 
   interface Props {
     group: RepoGroup
+    pinned: boolean
+    onTogglePin: () => void
   }
 
-  const { group }: Props = $props()
+  const { group, pinned, onTogglePin }: Props = $props()
 
   let collapsed = $state(false)
 
@@ -17,17 +19,29 @@
 </script>
 
 <section class="mb-2">
-  <button
-    type="button"
-    onclick={toggle}
-    class="flex w-full items-baseline gap-2 border-b border-[var(--color-border)] px-2 py-1 text-left hover:bg-[var(--color-bg-elev)]"
+  <div
+    class="flex items-baseline gap-2 border-b border-[var(--color-border)] px-2 py-1 hover:bg-[var(--color-bg-elev)]"
   >
-    <span class="text-[var(--color-fg-bright)] w-[1ch]">{collapsed ? '▶' : '▼'}</span>
-    <span class="text-[var(--color-fg)]">{group.nameWithOwner}</span>
-    <span class="text-[var(--color-fg-dim)]"
-      >[{group.pullRequests.length.toString().padStart(2, '0')}]</span
+    <button
+      type="button"
+      onclick={toggle}
+      class="flex flex-1 items-baseline gap-2 text-left"
     >
-  </button>
+      <span class="text-[var(--color-fg-bright)] w-[1ch]">{collapsed ? '▶' : '▼'}</span>
+      <span class="text-[var(--color-fg)]">{group.nameWithOwner}</span>
+      <span class="text-[var(--color-fg-dim)]"
+        >[{group.pullRequests.length.toString().padStart(2, '0')}]</span
+      >
+    </button>
+    <button
+      type="button"
+      onclick={onTogglePin}
+      class="text-[var(--color-fg-dim)] hover:text-[var(--color-accent)]"
+      style:color={pinned ? 'var(--color-accent)' : undefined}
+      title={pinned ? 'unpin' : 'pin to top'}
+      aria-label={pinned ? 'unpin' : 'pin to top'}>{pinned ? '★' : '☆'}</button
+    >
+  </div>
 
   {#if !collapsed}
     <div class="pl-2">
