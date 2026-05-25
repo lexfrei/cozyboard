@@ -1,89 +1,100 @@
-<script>
-  import svelteLogo from './assets/svelte.svg'
-  import viteLogo from './assets/vite.svg'
-  import heroImg from './assets/hero.png'
-  import Counter from './lib/Counter.svelte'
+<script lang="ts">
+  import Header from './lib/Header.svelte'
+  import RepoGroupView from './lib/RepoGroup.svelte'
+  import Spinner from './lib/Spinner.svelte'
+  import SettingsDrawer from './lib/SettingsDrawer.svelte'
+  import { loadSettings, saveSettings, type Settings } from './lib/storage'
+  import { FIXTURE_GROUPS } from './lib/fixture'
+  import type { RepoGroup } from './lib/types'
+
+  type Status =
+    | { kind: 'awaiting-config' }
+    | { kind: 'loading'; message: string }
+    | { kind: 'ready'; groups: RepoGroup[]; totalPRs: number }
+    | { kind: 'error'; message: string }
+
+  let settings = $state<Settings>(loadSettings())
+  let settingsOpen = $state(false)
+  let status = $state<Status>({ kind: 'awaiting-config' })
+
+  $effect(() => {
+    if (settings.token === null) {
+      status = { kind: 'awaiting-config' }
+      return
+    }
+    status = { kind: 'loading', message: 'fetching pull requests' }
+    const t = setTimeout(() => {
+      const groups = FIXTURE_GROUPS
+      const total = groups.reduce((n, g) => n + g.pullRequests.length, 0)
+      status = { kind: 'ready', groups, totalPRs: total }
+    }, 1200)
+    return () => {
+      clearTimeout(t)
+    }
+  })
+
+  function toggleSettings() {
+    settingsOpen = !settingsOpen
+  }
+
+  function toggleMusic() {
+    settings = { ...settings, musicEnabled: !settings.musicEnabled }
+    saveSettings(settings)
+  }
+
+  function applySettings(next: Settings) {
+    settings = next
+    saveSettings(next)
+  }
 </script>
 
-<section id="center">
-  <div class="hero">
-    <img src={heroImg} class="base" width="170" height="179" alt="" />
-    <img src={svelteLogo} class="framework" alt="Svelte logo" />
-    <img src={viteLogo} class="vite" alt="Vite logo" />
-  </div>
-  <div>
-    <h1>Get started</h1>
-    <p>Edit <code>src/App.svelte</code> and save to test <code>HMR</code></p>
-  </div>
-  <Counter />
-</section>
+<div class="crt min-h-screen">
+  <Header
+    user={settings.token === null ? null : 'lexfrei'}
+    org={settings.org}
+    musicEnabled={settings.musicEnabled}
+    onToggleSettings={toggleSettings}
+    onToggleMusic={toggleMusic}
+  />
 
-<div class="ticks"></div>
+  <main class="mx-auto max-w-5xl px-4 py-6">
+    {#if status.kind === 'awaiting-config'}
+      <pre class="text-[var(--color-fg)]">
+&gt; awaiting configuration
+&gt; no github token in localStorage
+&gt;
+&gt; click <span class="text-[var(--color-accent)]">[⚙]</span> in the header to begin
+&gt;
+&gt; <span class="cursor"></span>
+      </pre>
+    {:else if status.kind === 'loading'}
+      <div class="flex items-baseline gap-2 text-[var(--color-fg)]">
+        <span class="text-[var(--color-fg-dim)]">[</span><Spinner /><span
+          class="text-[var(--color-fg-dim)]">]</span
+        >
+        <span>{status.message}<span class="cursor"></span></span>
+      </div>
+    {:else if status.kind === 'error'}
+      <div class="border border-[var(--color-err)] p-3 text-[var(--color-err)]">
+        <span class="font-bold">✗ error</span>
+        <p>{status.message}</p>
+      </div>
+    {:else if status.kind === 'ready'}
+      {@const groups = status.groups}
+      {@const totalPRs = status.totalPRs}
+      <div class="mb-4 flex items-baseline justify-between text-[var(--color-fg-dim)]">
+        <span
+          >▸ {groups.length} repositories <span class="text-[var(--color-border-bright)]">·</span>
+          {totalPRs} open PRs</span
+        >
+        <span class="text-[11px]">[fixture data — wire GraphQL next]</span>
+      </div>
 
-<section id="next-steps">
-  <div id="docs">
-    <svg class="icon" role="presentation" aria-hidden="true">
-      <use href="/icons.svg#documentation-icon"></use>
-    </svg>
-    <h2>Documentation</h2>
-    <p>Your questions, answered</p>
-    <ul>
-      <li>
-        <a href="https://vite.dev/" target="_blank" rel="noreferrer">
-          <img class="logo" src={viteLogo} alt="" />
-          Explore Vite
-        </a>
-      </li>
-      <li>
-        <a href="https://svelte.dev/" target="_blank" rel="noreferrer">
-          <img class="button-icon" src={svelteLogo} alt="" />
-          Learn more
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div id="social">
-    <svg class="icon" role="presentation" aria-hidden="true">
-      <use href="/icons.svg#social-icon"></use>
-    </svg>
-    <h2>Connect with us</h2>
-    <p>Join the Vite community</p>
-    <ul>
-      <li>
-        <a href="https://github.com/vitejs/vite" target="_blank" rel="noreferrer">
-          <svg class="button-icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#github-icon"></use>
-          </svg>
-          GitHub
-        </a>
-      </li>
-      <li>
-        <a href="https://chat.vite.dev/" target="_blank" rel="noreferrer">
-          <svg class="button-icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#discord-icon"></use>
-          </svg>
-          Discord
-        </a>
-      </li>
-      <li>
-        <a href="https://x.com/vite_js" target="_blank" rel="noreferrer">
-          <svg class="button-icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#x-icon"></use>
-          </svg>
-          X.com
-        </a>
-      </li>
-      <li>
-        <a href="https://bsky.app/profile/vite.dev" target="_blank" rel="noreferrer">
-          <svg class="button-icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#bluesky-icon"></use>
-          </svg>
-          Bluesky
-        </a>
-      </li>
-    </ul>
-  </div>
-</section>
+      {#each groups as group (group.nameWithOwner)}
+        <RepoGroupView {group} />
+      {/each}
+    {/if}
+  </main>
 
-<div class="ticks"></div>
-<section id="spacer"></section>
+  <SettingsDrawer open={settingsOpen} {settings} onClose={toggleSettings} onSave={applySettings} />
+</div>
