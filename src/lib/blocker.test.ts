@@ -22,6 +22,7 @@ function pr(overrides: Partial<PullRequest> = {}): PullRequest {
     mergeable: 'MERGEABLE',
     statusCheckRollup: null,
     reviewRequests: [],
+    viewerLatestReviewState: null,
     ...overrides,
   }
 }

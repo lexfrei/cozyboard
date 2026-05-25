@@ -22,6 +22,7 @@ function raw(overrides: Partial<RawPR> = {}): RawPR {
     mergeable: 'MERGEABLE',
     commits: { nodes: [{ commit: { statusCheckRollup: { state: 'SUCCESS' } } }] },
     reviewRequests: { nodes: [] },
+    viewerLatestReview: null,
     ...overrides,
   }
 }
@@ -90,6 +91,7 @@ describe('groupByRepo', () => {
       mergeable: 'MERGEABLE',
       statusCheckRollup: null,
       reviewRequests: [],
+      viewerLatestReviewState: null,
     }
   }
 

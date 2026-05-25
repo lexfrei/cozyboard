@@ -31,6 +31,13 @@ export type AuthorAssociation =
   | 'MANNEQUIN'
   | 'NONE'
 
+export type ReviewState =
+  | 'APPROVED'
+  | 'CHANGES_REQUESTED'
+  | 'COMMENTED'
+  | 'DISMISSED'
+  | 'PENDING'
+
 export interface PullRequest {
   id: string
   number: number
@@ -50,6 +57,7 @@ export interface PullRequest {
   mergeable: Mergeable
   statusCheckRollup: CheckStatus
   reviewRequests: Actor[]
+  viewerLatestReviewState: ReviewState | null
 }
 
 export interface RepoGroup {

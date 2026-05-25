@@ -7,6 +7,7 @@ export interface Filters {
   readyForReview: TriState
   mine: TriState
   fromMaintainer: TriState
+  reviewedByMe: TriState
   minAgeDays: number | null
   maxAgeDays: number | null
   labels: Record<string, TriState>
@@ -16,6 +17,7 @@ export const EMPTY_FILTERS: Filters = {
   readyForReview: null,
   mine: null,
   fromMaintainer: null,
+  reviewedByMe: null,
   minAgeDays: null,
   maxAgeDays: null,
   labels: {},
@@ -50,6 +52,11 @@ export function isMine(pr: PullRequest, viewer: string | null): boolean {
   return pr.author?.login === viewer
 }
 
+export function isReviewedByMe(pr: PullRequest): boolean {
+  // PENDING means a draft review the viewer hasn't submitted yet — treat as not reviewed.
+  return pr.viewerLatestReviewState !== null && pr.viewerLatestReviewState !== 'PENDING'
+}
+
 function ageDays(pr: PullRequest, now: number = Date.now()): number {
   const updated = new Date(pr.updatedAt).getTime()
   return (now - updated) / 86_400_000
@@ -69,6 +76,7 @@ export function passesFilters(
   if (!matchesTriState(filters.readyForReview, isReadyForReview(pr))) return false
   if (!matchesTriState(filters.mine, isMine(pr, viewer))) return false
   if (!matchesTriState(filters.fromMaintainer, isFromMaintainer(pr))) return false
+  if (!matchesTriState(filters.reviewedByMe, isReviewedByMe(pr))) return false
   if (filters.minAgeDays !== null || filters.maxAgeDays !== null) {
     const age = ageDays(pr, now)
     if (filters.minAgeDays !== null && age < filters.minAgeDays) return false
@@ -90,6 +98,7 @@ export function isFilterActive(filters: Filters): boolean {
     filters.readyForReview !== null ||
     filters.mine !== null ||
     filters.fromMaintainer !== null ||
+    filters.reviewedByMe !== null ||
     filters.minAgeDays !== null ||
     filters.maxAgeDays !== null ||
     anyLabelSet(filters.labels)

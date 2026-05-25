@@ -3,6 +3,7 @@ import {
   cycleTriState,
   EMPTY_FILTERS,
   isReadyForReview,
+  isReviewedByMe,
   passesFilters,
   type Filters,
 } from './filters'
@@ -28,6 +29,7 @@ function pr(overrides: Partial<PullRequest> = {}): PullRequest {
     mergeable: 'MERGEABLE',
     statusCheckRollup: 'SUCCESS',
     reviewRequests: [],
+    viewerLatestReviewState: null,
     ...overrides,
   }
 }
@@ -138,6 +140,25 @@ describe('passesFilters', () => {
       const f = filters({ fromMaintainer: false })
       expect(passesFilters(pr({ authorAssociation: 'MEMBER' }), f, null)).toBe(false)
       expect(passesFilters(pr({ authorAssociation: 'CONTRIBUTOR' }), f, null)).toBe(true)
+    })
+  })
+
+  describe('reviewedByMe', () => {
+    it('= true keeps only PRs the viewer reviewed', () => {
+      const f = filters({ reviewedByMe: true })
+      expect(passesFilters(pr({ viewerLatestReviewState: 'APPROVED' }), f, null)).toBe(true)
+      expect(passesFilters(pr({ viewerLatestReviewState: 'COMMENTED' }), f, null)).toBe(true)
+      expect(passesFilters(pr({ viewerLatestReviewState: null }), f, null)).toBe(false)
+    })
+
+    it('= false keeps only PRs the viewer has NOT reviewed', () => {
+      const f = filters({ reviewedByMe: false })
+      expect(passesFilters(pr({ viewerLatestReviewState: null }), f, null)).toBe(true)
+      expect(passesFilters(pr({ viewerLatestReviewState: 'APPROVED' }), f, null)).toBe(false)
+    })
+
+    it('PENDING (draft review) counts as not reviewed', () => {
+      expect(isReviewedByMe(pr({ viewerLatestReviewState: 'PENDING' }))).toBe(false)
     })
   })
 

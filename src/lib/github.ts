@@ -6,6 +6,7 @@ import type {
   PullRequest,
   RepoGroup,
   ReviewDecision,
+  ReviewState,
 } from './types'
 
 const ENDPOINT = 'https://api.github.com/graphql'
@@ -43,6 +44,7 @@ const QUERY = `query CozystackPRs($search: String!, $cursor: String) {
             }
           }
         }
+        viewerLatestReview { state }
       }
     }
   }
@@ -69,6 +71,7 @@ export interface RawPR {
   reviewRequests: {
     nodes: { requestedReviewer: { __typename: string; login?: string | null } | null }[]
   }
+  viewerLatestReview: { state: ReviewState } | null
 }
 
 interface SearchResponse {
@@ -111,6 +114,7 @@ export function transformPR(raw: RawPR): PullRequest {
     mergeable: raw.mergeable,
     statusCheckRollup,
     reviewRequests,
+    viewerLatestReviewState: raw.viewerLatestReview?.state ?? null,
   }
 }
 

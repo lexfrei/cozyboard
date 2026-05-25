@@ -22,6 +22,7 @@ function pr(labelNames: string[]): PullRequest {
     mergeable: 'MERGEABLE',
     statusCheckRollup: null,
     reviewRequests: [],
+    viewerLatestReviewState: null,
   }
 }
 
