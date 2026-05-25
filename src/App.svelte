@@ -19,6 +19,7 @@
     setOrgs,
     setToken,
     settings,
+    toggleCollapsedRepo,
     togglePinnedRepo,
   } from './lib/state/settings.svelte'
 
@@ -179,6 +180,7 @@
       </div>
     {:else}
       {@const pinnedSet = new Set(settings.pinnedRepos)}
+      {@const collapsedSet = new Set(settings.collapsedRepos)}
       {@const filteredGroups = pulls.groups
         .map((g) => ({
           ...g,
@@ -255,8 +257,12 @@
         <RepoGroupView
           {group}
           pinned={pinnedSet.has(group.nameWithOwner)}
+          collapsed={collapsedSet.has(group.nameWithOwner)}
           onTogglePin={() => {
             togglePinnedRepo(group.nameWithOwner)
+          }}
+          onToggleCollapsed={() => {
+            toggleCollapsedRepo(group.nameWithOwner)
           }}
         />
       {/each}

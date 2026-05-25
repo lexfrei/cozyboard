@@ -6,23 +6,23 @@
   interface Props {
     group: RepoGroup
     pinned: boolean
+    collapsed: boolean
     onTogglePin: () => void
+    onToggleCollapsed: () => void
   }
 
-  const { group, pinned, onTogglePin }: Props = $props()
-
-  let collapsed = $state(false)
-
-  function toggle() {
-    collapsed = !collapsed
-  }
+  const { group, pinned, collapsed, onTogglePin, onToggleCollapsed }: Props = $props()
 </script>
 
 <section class="mb-2">
   <div
     class="flex items-baseline gap-2 border-b border-[var(--color-border)] px-2 py-1 hover:bg-[var(--color-bg-elev)]"
   >
-    <button type="button" onclick={toggle} class="flex flex-1 items-baseline gap-2 text-left">
+    <button
+      type="button"
+      onclick={onToggleCollapsed}
+      class="flex flex-1 items-baseline gap-2 text-left"
+    >
       <span class="text-[var(--color-fg-bright)] w-[1ch]">{collapsed ? '▶' : '▼'}</span>
       <span class="text-[var(--color-fg)]">{group.nameWithOwner}</span>
       <span class="text-[var(--color-fg-dim)]"

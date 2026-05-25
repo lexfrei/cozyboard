@@ -8,6 +8,7 @@ export interface Settings {
   filters: Filters
   musicEnabled: boolean
   pinnedRepos: string[]
+  collapsedRepos: string[]
 }
 
 function defaults(): Settings {
@@ -17,6 +18,7 @@ function defaults(): Settings {
     filters: { ...EMPTY_FILTERS },
     musicEnabled: false,
     pinnedRepos: [],
+    collapsedRepos: [],
   }
 }
 
@@ -78,6 +80,7 @@ interface LegacyShape {
   musicEnabled?: boolean
   filters?: unknown
   pinnedRepos?: unknown
+  collapsedRepos?: unknown
 }
 
 function loadFromStorage(): Settings {
@@ -94,6 +97,7 @@ function loadFromStorage(): Settings {
       filters: normaliseFilters(parsed.filters),
       musicEnabled: parsed.musicEnabled === true,
       pinnedRepos: normaliseStringArray(parsed.pinnedRepos),
+      collapsedRepos: normaliseStringArray(parsed.collapsedRepos),
     }
   } catch {
     return defaults()
@@ -112,6 +116,7 @@ function persist(): void {
         filters: settings.filters,
         musicEnabled: settings.musicEnabled,
         pinnedRepos: settings.pinnedRepos,
+        collapsedRepos: settings.collapsedRepos,
       }),
     )
   } catch {
@@ -145,6 +150,16 @@ export function togglePinnedRepo(nameWithOwner: string): void {
     settings.pinnedRepos.splice(idx, 1)
   } else {
     settings.pinnedRepos.push(nameWithOwner)
+  }
+  persist()
+}
+
+export function toggleCollapsedRepo(nameWithOwner: string): void {
+  const idx = settings.collapsedRepos.indexOf(nameWithOwner)
+  if (idx >= 0) {
+    settings.collapsedRepos.splice(idx, 1)
+  } else {
+    settings.collapsedRepos.push(nameWithOwner)
   }
   persist()
 }
