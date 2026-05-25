@@ -10,7 +10,7 @@
     'ERROR',
   ]
 
-  let collapsed = $state(false)
+  let collapsed = $state(true)
 
   function toggle() {
     collapsed = !collapsed

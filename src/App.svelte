@@ -92,13 +92,15 @@
         <span class="text-[11px]">[fixture data — wire GraphQL next]</span>
       </div>
 
-      <Legend />
-
       <PRColumnHeader />
 
       {#each groups as group (group.nameWithOwner)}
         <RepoGroupView {group} />
       {/each}
+
+      <div class="mt-6">
+        <Legend />
+      </div>
     {/if}
   </main>
 
