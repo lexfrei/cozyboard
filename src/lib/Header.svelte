@@ -1,13 +1,15 @@
 <script lang="ts">
   interface Props {
     user?: string | null
-    org: string
+    orgs: string[]
     musicEnabled: boolean
     onToggleSettings: () => void
     onToggleMusic: () => void
   }
 
-  const { user, org, musicEnabled, onToggleSettings, onToggleMusic }: Props = $props()
+  const { user, orgs, musicEnabled, onToggleSettings, onToggleMusic }: Props = $props()
+
+  const orgsDisplay = $derived(orgs.length === 0 ? '∅' : orgs.join(','))
 </script>
 
 <header
@@ -18,7 +20,8 @@
     <span class="text-[var(--color-fg-dim)]">v0.1</span>
     <span class="text-[var(--color-fg-dim)]">·</span>
     <span class="text-[var(--color-fg)]"
-      >org:<span class="text-[var(--color-info)]">{org}</span></span
+      >orgs:<span class="text-[var(--color-info)]" title={orgs.join(', ')}>{orgsDisplay}</span
+      ></span
     >
   </div>
 

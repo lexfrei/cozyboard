@@ -11,23 +11,41 @@
   const { open, settings, onClose, onSave }: Props = $props()
 
   let token = $state('')
-  let org = $state('')
+  let orgs = $state<string[]>([])
 
   $effect(() => {
     if (open) {
       token = settings.token ?? ''
-      org = settings.org
+      orgs = settings.orgs.length === 0 ? [''] : [...settings.orgs]
     }
   })
 
   function commit(event: SubmitEvent) {
     event.preventDefault()
-    onSave({ ...settings, token: token.trim() === '' ? null : token.trim(), org: org.trim() })
+    const cleaned = orgs.map((o) => o.trim()).filter((o) => o.length > 0)
+    onSave({
+      ...settings,
+      token: token.trim() === '' ? null : token.trim(),
+      orgs: cleaned,
+    })
     onClose()
   }
 
   function clearToken() {
     token = ''
+  }
+
+  function addOrg() {
+    orgs = [...orgs, '']
+  }
+
+  function removeOrg(index: number) {
+    orgs = orgs.filter((_, i) => i !== index)
+    if (orgs.length === 0) orgs = ['']
+  }
+
+  function updateOrg(index: number, value: string) {
+    orgs = orgs.map((o, i) => (i === index ? value : o))
   }
 </script>
 
@@ -55,16 +73,38 @@
     </div>
 
     <form onsubmit={commit} class="flex flex-1 flex-col gap-4">
-      <label class="flex flex-col gap-1">
-        <span class="text-[var(--color-fg-dim)]">▸ github org</span>
-        <input
-          type="text"
-          bind:value={org}
-          class="border border-[var(--color-border-bright)] bg-[var(--color-bg)] px-2 py-1 text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-none"
-          spellcheck="false"
-          autocomplete="off"
-        />
-      </label>
+      <fieldset class="flex flex-col gap-1">
+        <legend class="text-[var(--color-fg-dim)]">▸ github orgs</legend>
+        {#each orgs as org, i (i)}
+          <div class="flex gap-1">
+            <input
+              type="text"
+              value={org}
+              oninput={(e) => {
+                updateOrg(i, e.currentTarget.value)
+              }}
+              class="flex-1 border border-[var(--color-border-bright)] bg-[var(--color-bg)] px-2 py-1 text-[var(--color-fg)] focus:border-[var(--color-accent)] focus:outline-none"
+              spellcheck="false"
+              autocomplete="off"
+              placeholder="cozystack"
+            />
+            <button
+              type="button"
+              onclick={() => {
+                removeOrg(i)
+              }}
+              class="border border-[var(--color-border-bright)] px-2 text-[var(--color-fg)] hover:border-[var(--color-err)] hover:text-[var(--color-err)]"
+              aria-label="remove org">✗</button
+            >
+          </div>
+        {/each}
+        <button
+          type="button"
+          onclick={addOrg}
+          class="self-start border border-[var(--color-border-bright)] px-2 py-0.5 text-[var(--color-fg-dim)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          >+ add org</button
+        >
+      </fieldset>
 
       <label class="flex flex-col gap-1">
         <span class="text-[var(--color-fg-dim)]"

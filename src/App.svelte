@@ -21,18 +21,22 @@
 
   $effect(() => {
     const token = settings.token
-    const org = settings.org
+    const orgs = settings.orgs
     // Force re-run on reload button click.
     void reloadTick
     if (token === null) {
       status = { kind: 'awaiting-config' }
       return
     }
-    status = { kind: 'loading', message: `fetching open prs from org:${org}` }
+    if (orgs.length === 0) {
+      status = { kind: 'error', message: 'no orgs configured — add one in settings' }
+      return
+    }
+    status = { kind: 'loading', message: `fetching open prs from ${orgs.join(', ')}` }
     const controller = new AbortController()
     void (async () => {
       try {
-        const groups = await fetchOpenPRs(token, org, controller.signal)
+        const groups = await fetchOpenPRs(token, orgs, controller.signal)
         const totalPRs = groups.reduce((n, g) => n + g.pullRequests.length, 0)
         status = { kind: 'ready', groups, totalPRs, fetchedAt: Date.now() }
       } catch (err) {
@@ -73,7 +77,7 @@
 <div class="crt min-h-screen">
   <Header
     user={settings.token === null ? null : 'authenticated'}
-    org={settings.org}
+    orgs={settings.orgs}
     musicEnabled={settings.musicEnabled}
     onToggleSettings={toggleSettings}
     onToggleMusic={toggleMusic}

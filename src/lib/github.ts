@@ -134,11 +134,11 @@ export class GitHubError extends Error {
   }
 }
 
-export async function fetchOpenPRs(
+async function fetchForOrg(
   token: string,
   org: string,
-  signal?: AbortSignal,
-): Promise<RepoGroup[]> {
+  signal: AbortSignal | undefined,
+): Promise<PullRequest[]> {
   const search = `is:pr state:open draft:false org:${org} archived:false`
   const all: PullRequest[] = []
   let cursor: string | null = null
@@ -158,12 +158,12 @@ export async function fetchOpenPRs(
       const remaining = res.headers.get('x-ratelimit-remaining')
       throw new GitHubError(remaining === '0' ? 'rate limit exhausted' : 'forbidden', 403)
     }
-    if (!res.ok) throw new GitHubError(`http ${res.status.toString()}`, res.status)
+    if (!res.ok) throw new GitHubError(`http ${res.status.toString()} for org:${org}`, res.status)
     const json = (await res.json()) as SearchResponse
     if (json.errors && json.errors.length > 0) {
-      throw new GitHubError(json.errors.map((e) => e.message).join('; '))
+      throw new GitHubError(`org:${org}: ${json.errors.map((e) => e.message).join('; ')}`)
     }
-    if (!json.data) throw new GitHubError('malformed graphql response')
+    if (!json.data) throw new GitHubError(`malformed graphql response for org:${org}`)
     const { search: s } = json.data
     for (const node of s.nodes) {
       all.push(transformPR(node))
@@ -172,5 +172,15 @@ export async function fetchOpenPRs(
     cursor = s.pageInfo.endCursor
     if (cursor === null) break
   }
-  return groupByRepo(all)
+  return all
+}
+
+export async function fetchOpenPRs(
+  token: string,
+  orgs: string[],
+  signal?: AbortSignal,
+): Promise<RepoGroup[]> {
+  if (orgs.length === 0) return []
+  const perOrg = await Promise.all(orgs.map((org) => fetchForOrg(token, org, signal)))
+  return groupByRepo(perOrg.flat())
 }
