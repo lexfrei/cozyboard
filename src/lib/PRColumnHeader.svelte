@@ -3,7 +3,7 @@
 </script>
 
 <div
-  class="row-grid border-b border-[var(--color-border-bright)] py-1 pl-2 pr-3 text-[11px] uppercase tracking-wider text-[var(--color-fg-dim)]"
+  class="row-grid border-l-2 border-b border-transparent border-b-[var(--color-border-bright)] py-1 pl-2 pr-3 text-[11px] uppercase tracking-wider text-[var(--color-fg-dim)]"
 >
   <span class="text-center" title="blocker">BLK</span>
   <span class="text-center" title="ci">CI</span>
