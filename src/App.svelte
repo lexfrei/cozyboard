@@ -11,7 +11,7 @@
   import { fetchViewer } from './lib/github'
   import { deriveLabelFacets } from './lib/labels'
   import { player } from './lib/music'
-  import { pulls, refresh, reset, start, stop } from './lib/state/pulls.svelte'
+  import { POLL_INTERVAL_MS, pulls, refresh, reset, start, stop } from './lib/state/pulls.svelte'
   import {
     setFilters,
     setMusicEnabled,
@@ -177,7 +177,12 @@
           <span class="text-[var(--color-border-bright)]">·</span>
           {matched}/{pulls.totalPRs} open PRs</span
         >
-        <Ticker lastFetchedAt={pulls.lastFetchedAt} onClick={refresh} />
+        <Ticker
+          lastFetchedAt={pulls.lastFetchedAt}
+          refreshing={pulls.refreshing}
+          intervalMs={POLL_INTERVAL_MS}
+          onClick={refresh}
+        />
       </div>
 
       <input

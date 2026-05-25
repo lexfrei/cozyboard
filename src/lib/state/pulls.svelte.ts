@@ -1,7 +1,7 @@
 import { fetchOpenPRs, GitHubError } from '../github'
 import type { RepoGroup } from '../types'
 
-const POLL_INTERVAL_MS = 60_000
+export const POLL_INTERVAL_MS = 60_000
 
 export type PullsStatus = 'idle' | 'loading' | 'ready' | 'error'
 
@@ -9,6 +9,7 @@ export interface PullsState {
   groups: RepoGroup[]
   totalPRs: number
   status: PullsStatus
+  refreshing: boolean
   lastFetchedAt: number | null
   lastError: string | null
 }
@@ -17,6 +18,7 @@ export const pulls = $state<PullsState>({
   groups: [],
   totalPRs: 0,
   status: 'idle',
+  refreshing: false,
   lastFetchedAt: null,
   lastError: null,
 })
@@ -40,10 +42,12 @@ async function fetchAndStore(): Promise<void> {
   const controller = new AbortController()
   activeController = controller
   // Only show the big loading state on the very first fetch — subsequent
-  // background refreshes keep the old data visible.
+  // background refreshes keep the old data visible and surface the spinner
+  // through pulls.refreshing instead.
   if (pulls.groups.length === 0 && pulls.status !== 'error') {
     pulls.status = 'loading'
   }
+  pulls.refreshing = true
   try {
     const groups = await fetchOpenPRs(currentToken, currentOrgs, controller.signal)
     if (controller.signal.aborted) return
@@ -65,7 +69,10 @@ async function fetchAndStore(): Promise<void> {
     pulls.status = pulls.groups.length === 0 ? 'error' : 'ready'
     pulls.lastError = message
   } finally {
-    if (activeController === controller) activeController = null
+    if (activeController === controller) {
+      activeController = null
+      pulls.refreshing = false
+    }
   }
 }
 
@@ -89,6 +96,7 @@ export function start(token: string, orgs: string[]): void {
     pulls.groups = []
     pulls.totalPRs = 0
     pulls.status = 'idle'
+    pulls.refreshing = false
     pulls.lastError = null
     pulls.lastFetchedAt = null
   }
@@ -118,6 +126,7 @@ export function reset(): void {
   pulls.groups = []
   pulls.totalPRs = 0
   pulls.status = 'idle'
+  pulls.refreshing = false
   pulls.lastError = null
   pulls.lastFetchedAt = null
 }
