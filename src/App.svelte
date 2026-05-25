@@ -81,20 +81,21 @@
     }
   })
 
-  $effect(() => {
-    if (settings.musicEnabled) {
-      void player.start()
-    } else {
-      player.stop()
-    }
-  })
-
   function toggleSettings() {
     settingsOpen = !settingsOpen
   }
 
   function toggleMusic() {
-    settings = { ...settings, musicEnabled: !settings.musicEnabled }
+    const next = !settings.musicEnabled
+    // Start/stop inside the click handler so Safari sees the user gesture
+    // before any await boundary; otherwise AudioContext.resume() silently
+    // fails on iOS/macOS Safari.
+    if (next) {
+      void player.start()
+    } else {
+      player.stop()
+    }
+    settings = { ...settings, musicEnabled: next }
     saveSettings(settings)
   }
 
