@@ -1,9 +1,11 @@
 <script lang="ts">
+  import FilterBar from './lib/FilterBar.svelte'
   import Header from './lib/Header.svelte'
   import Legend from './lib/Legend.svelte'
   import RepoGroupView from './lib/RepoGroup.svelte'
   import Spinner from './lib/Spinner.svelte'
   import SettingsDrawer from './lib/SettingsDrawer.svelte'
+  import { passesFilters, type Filters } from './lib/filters'
   import { loadSettings, saveSettings, type Settings } from './lib/storage'
   import { fetchOpenPRs, fetchViewer, GitHubError } from './lib/github'
   import { player } from './lib/music'
@@ -104,6 +106,11 @@
     saveSettings(next)
   }
 
+  function applyFilters(next: Filters) {
+    settings = { ...settings, filters: next }
+    saveSettings(settings)
+  }
+
   function reload() {
     reloadTick++
   }
@@ -148,13 +155,19 @@
         <p class="mt-2">{status.message}</p>
       </div>
     {:else if status.kind === 'ready'}
-      {@const groups = status.groups}
       {@const totalPRs = status.totalPRs}
-      <div class="mb-4 flex items-baseline justify-between text-[var(--color-fg-dim)]">
+      {@const filteredGroups = status.groups
+        .map((g) => ({
+          ...g,
+          pullRequests: g.pullRequests.filter((pr) => passesFilters(pr, settings.filters, viewer)),
+        }))
+        .filter((g) => g.pullRequests.length > 0)}
+      {@const matched = filteredGroups.reduce((n, g) => n + g.pullRequests.length, 0)}
+      <div class="mb-1 flex items-baseline justify-between text-[var(--color-fg-dim)]">
         <span
-          >▸ {groups.length} repositories
+          >▸ {filteredGroups.length}/{status.groups.length} repositories
           <span class="text-[var(--color-border-bright)]">·</span>
-          {totalPRs} open PRs</span
+          {matched}/{totalPRs} open PRs</span
         >
         <button
           type="button"
@@ -165,7 +178,9 @@
         >
       </div>
 
-      {#each groups as group (group.nameWithOwner)}
+      <FilterBar filters={settings.filters} {matched} total={totalPRs} onChange={applyFilters} />
+
+      {#each filteredGroups as group (group.nameWithOwner)}
         <RepoGroupView {group} />
       {/each}
 

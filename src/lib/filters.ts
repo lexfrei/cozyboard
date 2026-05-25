@@ -1,0 +1,78 @@
+import type { AuthorAssociation, PullRequest } from './types'
+
+export type TriState = null | true | false
+
+export interface Filters {
+  readyForReview: TriState
+  mine: TriState
+  fromMaintainer: TriState
+  maxAgeDays: number | null
+}
+
+export const EMPTY_FILTERS: Filters = {
+  readyForReview: null,
+  mine: null,
+  fromMaintainer: null,
+  maxAgeDays: null,
+}
+
+export function cycleTriState(value: TriState): TriState {
+  if (value === null) return true
+  if (value) return false
+  return null
+}
+
+const MAINTAINER_SET: ReadonlySet<AuthorAssociation> = new Set<AuthorAssociation>([
+  'OWNER',
+  'MEMBER',
+  'COLLABORATOR',
+])
+
+export function isReadyForReview(pr: PullRequest): boolean {
+  if (pr.isDraft) return false
+  if (pr.mergeable === 'CONFLICTING') return false
+  if (pr.statusCheckRollup === 'FAILURE' || pr.statusCheckRollup === 'ERROR') return false
+  if (pr.reviewDecision === 'CHANGES_REQUESTED') return false
+  return true
+}
+
+export function isFromMaintainer(pr: PullRequest): boolean {
+  return MAINTAINER_SET.has(pr.authorAssociation)
+}
+
+export function isMine(pr: PullRequest, viewer: string | null): boolean {
+  if (viewer === null) return false
+  return pr.author?.login === viewer
+}
+
+function ageDays(pr: PullRequest, now: number = Date.now()): number {
+  const updated = new Date(pr.updatedAt).getTime()
+  return (now - updated) / 86_400_000
+}
+
+function matchesTriState(state: TriState, predicate: boolean): boolean {
+  if (state === null) return true
+  return state ? predicate : !predicate
+}
+
+export function passesFilters(
+  pr: PullRequest,
+  filters: Filters,
+  viewer: string | null,
+  now: number = Date.now(),
+): boolean {
+  if (!matchesTriState(filters.readyForReview, isReadyForReview(pr))) return false
+  if (!matchesTriState(filters.mine, isMine(pr, viewer))) return false
+  if (!matchesTriState(filters.fromMaintainer, isFromMaintainer(pr))) return false
+  if (filters.maxAgeDays !== null && ageDays(pr, now) > filters.maxAgeDays) return false
+  return true
+}
+
+export function isFilterActive(filters: Filters): boolean {
+  return (
+    filters.readyForReview !== null ||
+    filters.mine !== null ||
+    filters.fromMaintainer !== null ||
+    filters.maxAgeDays !== null
+  )
+}

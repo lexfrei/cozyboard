@@ -21,12 +21,23 @@ export interface Actor {
   login: string
 }
 
+export type AuthorAssociation =
+  | 'OWNER'
+  | 'MEMBER'
+  | 'COLLABORATOR'
+  | 'CONTRIBUTOR'
+  | 'FIRST_TIME_CONTRIBUTOR'
+  | 'FIRST_TIMER'
+  | 'MANNEQUIN'
+  | 'NONE'
+
 export interface PullRequest {
   id: string
   number: number
   title: string
   url: string
   author: Actor | null
+  authorAssociation: AuthorAssociation
   createdAt: string
   updatedAt: string
   isDraft: boolean

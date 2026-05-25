@@ -9,6 +9,7 @@ function pr(overrides: Partial<PullRequest> = {}): PullRequest {
     title: 't',
     url: 'u',
     author: { login: 'a' },
+    authorAssociation: 'CONTRIBUTOR',
     createdAt: '2025-01-01',
     updatedAt: '2025-01-01',
     isDraft: false,

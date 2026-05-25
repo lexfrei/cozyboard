@@ -1,4 +1,12 @@
-import type { CheckStatus, Label, Mergeable, PullRequest, RepoGroup, ReviewDecision } from './types'
+import type {
+  AuthorAssociation,
+  CheckStatus,
+  Label,
+  Mergeable,
+  PullRequest,
+  RepoGroup,
+  ReviewDecision,
+} from './types'
 
 const ENDPOINT = 'https://api.github.com/graphql'
 
@@ -13,6 +21,7 @@ const QUERY = `query CozystackPRs($search: String!, $cursor: String) {
         title
         url
         author { login }
+        authorAssociation
         createdAt
         updatedAt
         isDraft
@@ -45,6 +54,7 @@ export interface RawPR {
   title: string
   url: string
   author: { login: string } | null
+  authorAssociation: AuthorAssociation
   createdAt: string
   updatedAt: string
   isDraft: boolean
@@ -88,6 +98,7 @@ export function transformPR(raw: RawPR): PullRequest {
     title: raw.title,
     url: raw.url,
     author: raw.author,
+    authorAssociation: raw.authorAssociation,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,
     isDraft: raw.isDraft,
