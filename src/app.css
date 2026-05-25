@@ -30,6 +30,18 @@
   --font-sans: var(--font-mono);
 }
 
+.row-grid {
+  display: grid;
+  grid-template-columns: 2ch 2ch 7ch minmax(0, 1fr) 18ch 5ch 6ch 5ch;
+  column-gap: 0.75rem;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+
+.row-grid > .labels {
+  grid-column: 4 / -1;
+}
+
 html,
 body {
   margin: 0;

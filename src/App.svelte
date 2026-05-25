@@ -1,5 +1,7 @@
 <script lang="ts">
   import Header from './lib/Header.svelte'
+  import Legend from './lib/Legend.svelte'
+  import PRColumnHeader from './lib/PRColumnHeader.svelte'
   import RepoGroupView from './lib/RepoGroup.svelte'
   import Spinner from './lib/Spinner.svelte'
   import SettingsDrawer from './lib/SettingsDrawer.svelte'
@@ -89,6 +91,10 @@
         >
         <span class="text-[11px]">[fixture data — wire GraphQL next]</span>
       </div>
+
+      <Legend />
+
+      <PRColumnHeader />
 
       {#each groups as group (group.nameWithOwner)}
         <RepoGroupView {group} />
