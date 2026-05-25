@@ -34,14 +34,13 @@ class ChiptunePlayer {
 
   async start(): Promise<void> {
     if (this.playing) return
-    // MUST run synchronously here — Safari's autoplay policy ties the gesture
-    // grant to the synchronous call stack of the click. Any await before
-    // AudioContext creation and resume() loses the grant and the context
-    // stays silent forever.
+    // MUST run synchronously here — Safari ties autoplay to the synchronous
+    // call stack of the click. Any await before AudioContext creation and
+    // resume() loses the grant and the context stays silent forever.
     const ctx = new AudioContext()
-    // Safari unlock: play a 1-sample silent buffer to fully wake the context.
-    // Without this the context appears 'running' but produces no audio on
-    // some Safari versions.
+    // Webkit audio unlock: play a 1-sample silent buffer to acquire the
+    // output device. Without this the context can report 'running' yet
+    // produce no audio on some Safari versions.
     const unlock = ctx.createBuffer(1, 1, ctx.sampleRate)
     const unlockSrc = ctx.createBufferSource()
     unlockSrc.buffer = unlock
@@ -49,18 +48,29 @@ class ChiptunePlayer {
     unlockSrc.start(0)
     const resumePromise = ctx.state === 'suspended' ? ctx.resume() : Promise.resolve()
     const master = ctx.createGain()
-    master.gain.value = 0.06
     master.connect(ctx.destination)
     this.ctx = ctx
     this.master = master
-    this.nextStepTime = ctx.currentTime + 0.1
-    this.step = 0
     this.playing = true
+
     try {
       await resumePromise
     } catch {
-      /* autoplay still blocked; tick() will run anyway and produce silence */
+      /* still blocked; tick() will just be silent until next gesture */
     }
+
+    // stop() may have run during the await — TS can't see that this.playing
+    // got mutated externally, so the narrowing flags this as always-truthy.
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    if (!this.playing) return
+
+    // Anchor the schedule clock AFTER resume. While suspended,
+    // ctx.currentTime is frozen at 0 — scheduling against that produces
+    // times in the past once the clock actually starts, and Safari silently
+    // drops past-times.
+    master.gain.setValueAtTime(0.06, ctx.currentTime)
+    this.nextStepTime = ctx.currentTime + 0.1
+    this.step = 0
     this.tick()
   }
 
