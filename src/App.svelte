@@ -6,6 +6,7 @@
   import SettingsDrawer from './lib/SettingsDrawer.svelte'
   import { loadSettings, saveSettings, type Settings } from './lib/storage'
   import { fetchOpenPRs, fetchViewer, GitHubError } from './lib/github'
+  import { player } from './lib/music'
   import type { RepoGroup } from './lib/types'
 
   type Status =
@@ -77,6 +78,14 @@
     })()
     return () => {
       controller.abort()
+    }
+  })
+
+  $effect(() => {
+    if (settings.musicEnabled) {
+      void player.start()
+    } else {
+      player.stop()
     }
   })
 
