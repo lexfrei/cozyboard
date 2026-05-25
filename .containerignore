@@ -1,0 +1,16 @@
+.git
+.github
+.claude
+.vscode
+.gitignore
+.gitattributes
+.prettierignore
+.prettierrc
+.dockerignore
+.containerignore
+Containerfile
+README.md
+deploy
+dist
+node_modules
+*.log
