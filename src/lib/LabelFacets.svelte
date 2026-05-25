@@ -52,7 +52,9 @@
 
 {#if facets.length > 0}
   <section class="mb-2 text-[12px]">
-    <div class="flex items-baseline gap-2">
+    <div
+      class="flex items-baseline gap-2 border-b border-[var(--color-border)] px-2 py-1 hover:bg-[var(--color-bg-elev)]"
+    >
       <button
         type="button"
         onclick={() => {
