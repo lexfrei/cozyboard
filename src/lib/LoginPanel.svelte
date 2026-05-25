@@ -15,7 +15,9 @@
     | { kind: 'error'; message: string }
 
   let phase = $state<Phase>({ kind: 'idle' })
+  let copied = $state(false)
   let controller: AbortController | null = null
+  let copiedResetTimer: ReturnType<typeof setTimeout> | null = null
 
   function sleep(ms: number, signal: AbortSignal): Promise<void> {
     return new Promise((resolve, reject) => {
@@ -82,6 +84,11 @@
   async function copyCode(code: string) {
     try {
       await navigator.clipboard.writeText(code)
+      copied = true
+      if (copiedResetTimer !== null) clearTimeout(copiedResetTimer)
+      copiedResetTimer = setTimeout(() => {
+        copied = false
+      }, 1500)
     } catch {
       /* clipboard blocked — user can read it on screen */
     }
@@ -111,14 +118,27 @@
         class="text-[var(--color-info)] underline">{code.verification_uri}</a
       >
       <div class="mt-3 text-[var(--color-fg-dim)]">▸ enter this code:</div>
-      <button
-        type="button"
-        onclick={() => {
-          void copyCode(code.user_code)
-        }}
-        class="mt-1 text-2xl font-bold tracking-[0.3em] text-[var(--color-accent)] hover:text-[var(--color-fg-bright)]"
-        title="click to copy">{code.user_code}</button
-      >
+      <div class="mt-1 flex items-center gap-3">
+        <button
+          type="button"
+          onclick={() => {
+            void copyCode(code.user_code)
+          }}
+          class="text-2xl font-bold tracking-[0.3em] text-[var(--color-accent)] hover:text-[var(--color-fg-bright)]"
+          title="click to copy">{code.user_code}</button
+        >
+        <button
+          type="button"
+          onclick={() => {
+            void copyCode(code.user_code)
+          }}
+          class="border border-[var(--color-border-bright)] px-2 py-1 text-[var(--color-fg)] hover:border-[var(--color-accent)] hover:text-[var(--color-accent)]"
+          title="copy code"
+          aria-label="copy code"
+        >
+          {copied ? '✓ copied' : '⧉ copy'}
+        </button>
+      </div>
       <div class="mt-3 flex items-baseline gap-2 text-[var(--color-fg)]">
         <span class="text-[var(--color-fg-dim)]">[</span><Spinner /><span
           class="text-[var(--color-fg-dim)]">]</span
