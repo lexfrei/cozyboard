@@ -2,7 +2,7 @@ export type ReviewDecision = 'APPROVED' | 'CHANGES_REQUESTED' | 'REVIEW_REQUIRED
 
 export type Mergeable = 'MERGEABLE' | 'CONFLICTING' | 'UNKNOWN'
 
-export type CheckStatus = 'SUCCESS' | 'FAILURE' | 'PENDING' | 'EXPECTED' | null
+export type CheckStatus = 'SUCCESS' | 'FAILURE' | 'ERROR' | 'PENDING' | 'EXPECTED' | null
 
 export type BlockerCategory =
   | 'conflict'

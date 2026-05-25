@@ -1,8 +1,8 @@
-import type { BlockerCategory, PullRequest } from './types'
+import type { BlockerCategory, CheckStatus, PullRequest } from './types'
 
 export function blockerOf(pr: PullRequest): BlockerCategory {
   if (pr.mergeable === 'CONFLICTING') return 'conflict'
-  if (pr.statusCheckRollup === 'FAILURE') return 'ci-fail'
+  if (pr.statusCheckRollup === 'FAILURE' || pr.statusCheckRollup === 'ERROR') return 'ci-fail'
   if (pr.reviewDecision === 'CHANGES_REQUESTED') return 'changes-requested'
   if (pr.reviewDecision === 'APPROVED') return 'approved'
   if (pr.reviewRequests.length === 0 && pr.reviewDecision === null) return 'no-reviewers'
@@ -29,3 +29,19 @@ export const BLOCKER_ORDER: BlockerCategory[] = [
   'awaiting-review',
   'approved',
 ]
+
+export const CI_META: Record<
+  Exclude<CheckStatus, null> | 'NONE',
+  { glyph: string; label: string; cssVar: string }
+> = {
+  NONE: { glyph: '−', label: 'no ci', cssVar: '--color-border-bright' },
+  EXPECTED: { glyph: '⋯', label: 'queued', cssVar: '--color-fg-dim' },
+  PENDING: { glyph: '◐', label: 'running', cssVar: '--color-warn' },
+  SUCCESS: { glyph: '✓', label: 'passing', cssVar: '--color-accent' },
+  FAILURE: { glyph: '✗', label: 'failing', cssVar: '--color-err' },
+  ERROR: { glyph: '‼', label: 'errored', cssVar: '--color-err' },
+}
+
+export function ciMeta(status: CheckStatus): (typeof CI_META)[keyof typeof CI_META] {
+  return CI_META[status ?? 'NONE']
+}
