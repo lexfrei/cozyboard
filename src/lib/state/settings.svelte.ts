@@ -30,8 +30,21 @@ function positiveNumberOrNull(value: unknown): number | null {
   return null
 }
 
+function normaliseLabelStates(value: unknown): Record<string, TriState> {
+  if (typeof value !== 'object' || value === null) return {}
+  const out: Record<string, TriState> = {}
+  for (const [name, state] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof name !== 'string' || name.length === 0) continue
+    const tri = triFrom(state)
+    if (tri !== null) out[name] = tri
+  }
+  return out
+}
+
 function normaliseFilters(value: unknown): Filters {
-  if (typeof value !== 'object' || value === null) return { ...EMPTY_FILTERS }
+  if (typeof value !== 'object' || value === null) {
+    return { ...EMPTY_FILTERS, labels: {} }
+  }
   const raw = value as Record<string, unknown>
   return {
     readyForReview: triFrom(raw.readyForReview),
@@ -39,6 +52,7 @@ function normaliseFilters(value: unknown): Filters {
     fromMaintainer: triFrom(raw.fromMaintainer),
     minAgeDays: positiveNumberOrNull(raw.minAgeDays),
     maxAgeDays: positiveNumberOrNull(raw.maxAgeDays),
+    labels: normaliseLabelStates(raw.labels),
   }
 }
 

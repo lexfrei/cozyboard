@@ -1,3 +1,4 @@
+import { passesLabelFilter } from './labels'
 import type { AuthorAssociation, PullRequest } from './types'
 
 export type TriState = null | true | false
@@ -8,6 +9,7 @@ export interface Filters {
   fromMaintainer: TriState
   minAgeDays: number | null
   maxAgeDays: number | null
+  labels: Record<string, TriState>
 }
 
 export const EMPTY_FILTERS: Filters = {
@@ -16,6 +18,7 @@ export const EMPTY_FILTERS: Filters = {
   fromMaintainer: null,
   minAgeDays: null,
   maxAgeDays: null,
+  labels: {},
 }
 
 export function cycleTriState(value: TriState): TriState {
@@ -71,7 +74,15 @@ export function passesFilters(
     if (filters.minAgeDays !== null && age < filters.minAgeDays) return false
     if (filters.maxAgeDays !== null && age > filters.maxAgeDays) return false
   }
+  if (!passesLabelFilter(pr, filters.labels)) return false
   return true
+}
+
+function anyLabelSet(labels: Record<string, TriState>): boolean {
+  for (const value of Object.values(labels)) {
+    if (value !== null) return true
+  }
+  return false
 }
 
 export function isFilterActive(filters: Filters): boolean {
@@ -80,6 +91,7 @@ export function isFilterActive(filters: Filters): boolean {
     filters.mine !== null ||
     filters.fromMaintainer !== null ||
     filters.minAgeDays !== null ||
-    filters.maxAgeDays !== null
+    filters.maxAgeDays !== null ||
+    anyLabelSet(filters.labels)
   )
 }

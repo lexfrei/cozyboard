@@ -1,13 +1,15 @@
 <script lang="ts">
   import FilterBar from './lib/FilterBar.svelte'
   import Header from './lib/Header.svelte'
+  import LabelFacets from './lib/LabelFacets.svelte'
   import Legend from './lib/Legend.svelte'
   import RepoGroupView from './lib/RepoGroup.svelte'
   import SettingsDrawer from './lib/SettingsDrawer.svelte'
   import Spinner from './lib/Spinner.svelte'
   import Ticker from './lib/Ticker.svelte'
-  import { passesFilters } from './lib/filters'
+  import { passesFilters, type TriState } from './lib/filters'
   import { fetchViewer } from './lib/github'
+  import { deriveLabelFacets } from './lib/labels'
   import { player } from './lib/music'
   import { pulls, refresh, reset, start, stop } from './lib/state/pulls.svelte'
   import {
@@ -136,6 +138,14 @@
         {matched}
         total={pulls.totalPRs}
         onChange={setFilters}
+      />
+
+      <LabelFacets
+        facets={deriveLabelFacets(pulls.groups)}
+        states={settings.filters.labels}
+        onChange={(labels: Record<string, TriState>) => {
+          setFilters({ ...settings.filters, labels })
+        }}
       />
 
       {#each filteredGroups as group (group.nameWithOwner)}
