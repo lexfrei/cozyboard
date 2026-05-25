@@ -17,7 +17,7 @@ export const BLOCKER_META: Record<
   'ci-fail': { glyph: '✗', label: 'ci failing', cssVar: '--color-err' },
   'changes-requested': { glyph: '✎', label: 'changes requested', cssVar: '--color-warn' },
   'no-reviewers': { glyph: '◯', label: 'no reviewers', cssVar: '--color-info' },
-  'awaiting-review': { glyph: '⏳', label: 'awaiting review', cssVar: '--color-fg-dim' },
+  'awaiting-review': { glyph: '⊙', label: 'awaiting review', cssVar: '--color-fg-dim' },
   approved: { glyph: '✓', label: 'approved', cssVar: '--color-accent' },
 }
 

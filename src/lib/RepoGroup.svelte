@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { RepoGroup } from './types'
   import PRCard from './PRCard.svelte'
+  import PRColumnHeader from './PRColumnHeader.svelte'
 
   interface Props {
     group: RepoGroup
@@ -30,6 +31,7 @@
 
   {#if !collapsed}
     <div class="pl-2">
+      <PRColumnHeader />
       {#each group.pullRequests as pr (pr.id)}
         <PRCard {pr} />
       {/each}
