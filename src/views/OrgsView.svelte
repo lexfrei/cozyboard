@@ -15,7 +15,6 @@
     refresh,
     reset,
     start,
-    stop,
   } from '../lib/state/pulls.svelte'
   import {
     setFilters,
@@ -54,10 +53,8 @@
       reset()
       return
     }
+    // Idempotent — polling continues across tab switches.
     start(token, [...orgs])
-    return () => {
-      stop()
-    }
   })
 
   async function shareFilters(): Promise<boolean> {

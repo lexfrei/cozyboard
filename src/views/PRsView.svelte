@@ -14,7 +14,6 @@
     refresh,
     reset,
     start,
-    stop,
   } from '../lib/state/pullsMine.svelte'
   import {
     setPrsFilters,
@@ -45,10 +44,9 @@
       reset()
       return
     }
+    // Idempotent — keeps polling across tab switches so the data stays warm
+    // and re-entering this view shows the cached groups immediately.
     start(token, v)
-    return () => {
-      stop()
-    }
   })
 
   async function shareFilters(): Promise<boolean> {

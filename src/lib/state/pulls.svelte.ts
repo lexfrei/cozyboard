@@ -89,6 +89,11 @@ function tick(): void {
 
 export function start(token: string, orgs: string[]): void {
   const sameTarget = token === currentToken && orgsEqual(orgs, currentOrgs)
+  // Idempotent: if we're already polling for this exact target, leave the
+  // in-flight fetch and timer alone. Without this, a Svelte effect re-run
+  // would tear down a perfectly good fetch via stop() and the new start()
+  // would race itself.
+  if (sameTarget && pollTimer !== null) return
   stop()
   currentToken = token
   currentOrgs = [...orgs]
