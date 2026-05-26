@@ -1,52 +1,42 @@
 import { GitHubError } from './github'
 
-const ENDPOINT = 'https://api.github.com/graphql'
+const GRAPHQL = 'https://api.github.com/graphql'
+const REST = 'https://api.github.com'
 
-const QUERY = `query KeysFor($login: String!) {
+// Discovery — figure out whether 'login' is a user or an org, and if it's
+// an org, list the visible members. publicKeys on User is intentionally NOT
+// fetched here because it requires read:public_key scope; we hit REST for
+// the actual keys instead.
+const DISCOVERY = `query OwnerLookup($login: String!) {
   repositoryOwner(login: $login) {
     __typename
-    ... on User {
-      login
-      publicKeys(first: 100) { nodes { key } }
-    }
+    ... on User { login }
     ... on Organization {
       login
-      membersWithRole(first: 100) {
-        nodes {
-          login
-          publicKeys(first: 100) { nodes { key } }
-        }
-      }
+      membersWithRole(first: 100) { nodes { login } }
     }
   }
 }`
 
-interface KeyNode {
-  key: string
-}
-
-interface UserKeysShape {
+interface UserShape {
   __typename: 'User'
   login: string
-  publicKeys: { nodes: KeyNode[] }
 }
 
-interface OrgKeysShape {
+interface OrgShape {
   __typename: 'Organization'
   login: string
-  membersWithRole: {
-    nodes: {
-      login: string
-      publicKeys: { nodes: KeyNode[] }
-    }[]
-  }
+  membersWithRole: { nodes: { login: string }[] }
 }
 
 interface OwnerResponse {
-  data?: {
-    repositoryOwner: UserKeysShape | OrgKeysShape | null
-  }
+  data?: { repositoryOwner: UserShape | OrgShape | null }
   errors?: { message: string }[]
+}
+
+interface RestKey {
+  id: number
+  key: string
 }
 
 export interface UserKeys {
@@ -60,18 +50,33 @@ export interface KeysResult {
   users: UserKeys[]
 }
 
+async function fetchUserKeys(login: string, signal?: AbortSignal): Promise<string[]> {
+  // /users/{login}/keys is a public REST endpoint — returns every SSH key
+  // attached to the user regardless of who's asking, no scope required.
+  const res = await fetch(`${REST}/users/${encodeURIComponent(login)}/keys`, {
+    headers: { Accept: 'application/vnd.github+json' },
+    signal,
+  })
+  if (!res.ok) {
+    if (res.status === 404) return []
+    throw new GitHubError(`http ${res.status.toString()} for ${login}/keys`, res.status)
+  }
+  const json = (await res.json()) as RestKey[]
+  return json.map((k) => k.key)
+}
+
 export async function fetchKeys(
   token: string,
   login: string,
   signal?: AbortSignal,
 ): Promise<KeysResult> {
-  const res = await fetch(ENDPOINT, {
+  const res = await fetch(GRAPHQL, {
     method: 'POST',
     headers: {
       Authorization: `bearer ${token}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ query: QUERY, variables: { login } }),
+    body: JSON.stringify({ query: DISCOVERY, variables: { login } }),
     signal,
   })
   if (res.status === 401) throw new GitHubError('invalid or expired token', 401)
@@ -88,17 +93,14 @@ export async function fetchKeys(
     return {
       kind: 'user',
       login: owner.login,
-      users: [{ login: owner.login, keys: owner.publicKeys.nodes.map((n) => n.key) }],
+      users: [{ login: owner.login, keys: await fetchUserKeys(owner.login, signal) }],
     }
   }
-  return {
-    kind: 'organization',
-    login: owner.login,
-    users: owner.membersWithRole.nodes.map((m) => ({
-      login: m.login,
-      keys: m.publicKeys.nodes.map((n) => n.key),
-    })),
-  }
+  const members = owner.membersWithRole.nodes
+  const users = await Promise.all(
+    members.map(async (m) => ({ login: m.login, keys: await fetchUserKeys(m.login, signal) })),
+  )
+  return { kind: 'organization', login: owner.login, users }
 }
 
 export function formatAuthorizedKeys(result: KeysResult): string {
