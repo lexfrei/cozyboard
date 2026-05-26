@@ -6,6 +6,7 @@ export interface Settings {
   token: string | null
   orgs: string[]
   filters: Filters
+  prsFilters: Filters
   musicEnabled: boolean
   pinnedRepos: string[]
   collapsedRepos: string[]
@@ -16,6 +17,7 @@ function defaults(): Settings {
     token: null,
     orgs: [],
     filters: { ...EMPTY_FILTERS },
+    prsFilters: { ...EMPTY_FILTERS },
     musicEnabled: false,
     pinnedRepos: [],
     collapsedRepos: [],
@@ -79,6 +81,7 @@ interface LegacyShape {
   orgs?: unknown
   musicEnabled?: boolean
   filters?: unknown
+  prsFilters?: unknown
   pinnedRepos?: unknown
   collapsedRepos?: unknown
 }
@@ -95,6 +98,7 @@ function loadFromStorage(): Settings {
       token: typeof parsed.token === 'string' && parsed.token.length > 0 ? parsed.token : null,
       orgs,
       filters: normaliseFilters(parsed.filters),
+      prsFilters: normaliseFilters(parsed.prsFilters),
       musicEnabled: parsed.musicEnabled === true,
       pinnedRepos: normaliseStringArray(parsed.pinnedRepos),
       collapsedRepos: normaliseStringArray(parsed.collapsedRepos),
@@ -114,6 +118,7 @@ function persist(): void {
         token: settings.token,
         orgs: settings.orgs,
         filters: settings.filters,
+        prsFilters: settings.prsFilters,
         musicEnabled: settings.musicEnabled,
         pinnedRepos: settings.pinnedRepos,
         collapsedRepos: settings.collapsedRepos,
@@ -136,6 +141,11 @@ export function setOrgs(orgs: string[]): void {
 
 export function setFilters(next: Filters): void {
   settings.filters = normaliseFilters(next)
+  persist()
+}
+
+export function setPrsFilters(next: Filters): void {
+  settings.prsFilters = normaliseFilters(next)
   persist()
 }
 

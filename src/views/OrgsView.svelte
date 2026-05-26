@@ -5,7 +5,8 @@
   import RepoGroupView from '../lib/RepoGroup.svelte'
   import Spinner from '../lib/Spinner.svelte'
   import Ticker from '../lib/Ticker.svelte'
-  import { passesFilters, type TriState } from '../lib/filters'
+  import { isReviewedByMe, passesFilters, type TriState } from '../lib/filters'
+  import type { PullRequest } from '../lib/types'
   import { deriveLabelFacets } from '../lib/labels'
   import { parseShareableState, serializeShareableState } from '../lib/share'
   import {
@@ -188,6 +189,12 @@
       onToggleCollapsed={() => {
         toggleCollapsedRepo(group.nameWithOwner)
       }}
+      dimFor={(pr: PullRequest) => ({
+        dim: isReviewedByMe(pr),
+        reason: isReviewedByMe(pr)
+          ? `you reviewed this (${pr.viewerLatestReviewState ?? ''})`
+          : undefined,
+      })}
     />
   {/each}
 

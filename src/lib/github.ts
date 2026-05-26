@@ -149,12 +149,12 @@ export class GitHubError extends Error {
   }
 }
 
-async function fetchForOrg(
+export async function fetchPRsBySearch(
   token: string,
-  org: string,
+  search: string,
   signal: AbortSignal | undefined,
+  context: string = search,
 ): Promise<PullRequest[]> {
-  const search = `is:pr state:open draft:false org:${org} archived:false`
   const all: PullRequest[] = []
   let cursor: string | null = null
   // GitHub search caps results at 1000; cap pagination to avoid an infinite loop on a malformed response.
@@ -173,12 +173,14 @@ async function fetchForOrg(
       const remaining = res.headers.get('x-ratelimit-remaining')
       throw new GitHubError(remaining === '0' ? 'rate limit exhausted' : 'forbidden', 403)
     }
-    if (!res.ok) throw new GitHubError(`http ${res.status.toString()} for org:${org}`, res.status)
+    if (!res.ok) {
+      throw new GitHubError(`http ${res.status.toString()} for ${context}`, res.status)
+    }
     const json = (await res.json()) as SearchResponse
     if (json.errors && json.errors.length > 0) {
-      throw new GitHubError(`org:${org}: ${json.errors.map((e) => e.message).join('; ')}`)
+      throw new GitHubError(`${context}: ${json.errors.map((e) => e.message).join('; ')}`)
     }
-    if (!json.data) throw new GitHubError(`malformed graphql response for org:${org}`)
+    if (!json.data) throw new GitHubError(`malformed graphql response for ${context}`)
     const { search: s } = json.data
     for (const node of s.nodes) {
       all.push(transformPR(node))
@@ -196,8 +198,31 @@ export async function fetchOpenPRs(
   signal?: AbortSignal,
 ): Promise<RepoGroup[]> {
   if (orgs.length === 0) return []
-  const perOrg = await Promise.all(orgs.map((org) => fetchForOrg(token, org, signal)))
+  const perOrg = await Promise.all(
+    orgs.map((org) =>
+      fetchPRsBySearch(
+        token,
+        `is:pr state:open draft:false org:${org} archived:false`,
+        signal,
+        `org:${org}`,
+      ),
+    ),
+  )
   return groupByRepo(perOrg.flat())
+}
+
+export async function fetchMyOpenPRs(
+  token: string,
+  viewer: string,
+  signal?: AbortSignal,
+): Promise<RepoGroup[]> {
+  const prs = await fetchPRsBySearch(
+    token,
+    `is:pr state:open author:${viewer} archived:false`,
+    signal,
+    `author:${viewer}`,
+  )
+  return groupByRepo(prs)
 }
 
 interface ViewerResponse {

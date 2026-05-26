@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { RepoGroup } from './types'
+  import type { PullRequest, RepoGroup } from './types'
   import PRCard from './PRCard.svelte'
   import PRColumnHeader from './PRColumnHeader.svelte'
 
@@ -9,9 +9,17 @@
     collapsed: boolean
     onTogglePin: () => void
     onToggleCollapsed: () => void
+    dimFor?: (pr: PullRequest) => { dim: boolean; reason?: string }
   }
 
-  const { group, pinned, collapsed, onTogglePin, onToggleCollapsed }: Props = $props()
+  const {
+    group,
+    pinned,
+    collapsed,
+    onTogglePin,
+    onToggleCollapsed,
+    dimFor,
+  }: Props = $props()
 </script>
 
 <section class="mb-2">
@@ -43,7 +51,8 @@
     <div class="pl-2">
       <PRColumnHeader />
       {#each group.pullRequests as pr (pr.id)}
-        <PRCard {pr} />
+        {@const d = dimFor?.(pr) ?? { dim: false }}
+        <PRCard {pr} dim={d.dim} dimReason={d.reason} />
       {/each}
     </div>
   {/if}

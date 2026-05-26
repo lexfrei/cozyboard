@@ -61,6 +61,16 @@ export function isReviewedByMe(pr: PullRequest): boolean {
   return pr.viewerLatestReviewState !== null && pr.viewerLatestReviewState !== 'PENDING'
 }
 
+// For 'my prs' view: the viewer authored the PR, this tells whether the next
+// move belongs to the viewer (rebase, fix CI, address review) or is waiting
+// on someone else (review, merge).
+export function isActionableByAuthor(pr: PullRequest): boolean {
+  if (pr.mergeable === 'CONFLICTING') return true
+  if (pr.statusCheckRollup === 'FAILURE' || pr.statusCheckRollup === 'ERROR') return true
+  if (pr.reviewDecision === 'CHANGES_REQUESTED') return true
+  return false
+}
+
 export function isRequestedFromMe(pr: PullRequest, viewer: string | null): boolean {
   if (viewer === null) return false
   return pr.reviewRequests.some((r) => r.login === viewer)

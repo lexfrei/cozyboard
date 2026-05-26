@@ -2,19 +2,19 @@
   import type { PullRequest } from './types'
   import { blockerOf, BLOCKER_META, ciMeta } from './blocker'
   import { relativeAge } from './age'
-  import { isReviewedByMe } from './filters'
 
   interface Props {
     pr: PullRequest
+    dim?: boolean
+    dimReason?: string
   }
 
-  const { pr }: Props = $props()
+  const { pr, dim = false, dimReason }: Props = $props()
 
   const blocker = $derived(blockerOf(pr))
   const meta = $derived(BLOCKER_META[blocker])
   const ci = $derived(ciMeta(pr.statusCheckRollup))
   const age = $derived(relativeAge(pr.updatedAt))
-  const reviewed = $derived(isReviewedByMe(pr))
 </script>
 
 <a
@@ -22,8 +22,8 @@
   target="_blank"
   rel="noreferrer noopener"
   class="row-grid border-l-2 border-transparent py-1 pl-2 pr-3 hover:border-[var(--color-accent)] hover:bg-[var(--color-bg-elev)]"
-  class:opacity-50={reviewed}
-  title={reviewed ? `you reviewed this (${pr.viewerLatestReviewState ?? ''})` : undefined}
+  class:opacity-50={dim}
+  title={dim ? dimReason : undefined}
 >
   <span
     class="text-center"
