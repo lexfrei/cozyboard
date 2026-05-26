@@ -125,7 +125,19 @@
   </div>
 
   {#if formatted === ''}
-    <div class="text-[var(--color-fg-dim)]">no public keys found</div>
+    {@const r = keysStore.result}
+    <div class="text-[var(--color-fg-dim)]">
+      {#if r.kind === 'user'}
+        no public keys for <span class="text-[var(--color-accent)]">@{r.login}</span>
+      {:else if r.users.length === 0}
+        no visible members in org <span class="text-[var(--color-accent)]">{r.login}</span>
+        — try a token with <span class="text-[var(--color-info)]">read:org</span> if you're a member
+      {:else}
+        no public keys for any of the {r.users.length} visible member{r.users.length === 1
+          ? ''
+          : 's'} in org <span class="text-[var(--color-accent)]">{r.login}</span>
+      {/if}
+    </div>
   {:else}
     <pre
       class="overflow-x-auto whitespace-pre border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-2 text-[11px] text-[var(--color-fg)]">{formatted}</pre>
