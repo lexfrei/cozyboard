@@ -1,6 +1,6 @@
 <script lang="ts">
   import Spinner from '../lib/Spinner.svelte'
-  import { formatAuthorizedKeys } from '../lib/keys'
+  import { formatAuthorizedKeys, usersWithoutKeys } from '../lib/keys'
   import { keysStore, load, clear } from '../lib/state/keysStore.svelte'
   import { settings } from '../lib/state/settings.svelte'
   import { relativeAge } from '../lib/age'
@@ -13,6 +13,7 @@
   const totalKeys = $derived(
     keysStore.result ? keysStore.result.users.reduce((n, u) => n + u.keys.length, 0) : 0,
   )
+  const empties = $derived(keysStore.result ? usersWithoutKeys(keysStore.result) : [])
 
   function submit(event: SubmitEvent) {
     event.preventDefault()
@@ -141,6 +142,12 @@
   {:else}
     <pre
       class="overflow-x-auto whitespace-pre border border-[var(--color-border)] bg-[var(--color-bg-elev)] p-2 text-[11px] text-[var(--color-fg)]">{formatted}</pre>
+    {#if empties.length > 0}
+      <p class="mt-2 text-[11px] text-[var(--color-fg-dim)]">
+        ▸ no keys ({empties.length}):
+        <span class="text-[var(--color-fg)]">{empties.join(', ')}</span>
+      </p>
+    {/if}
   {/if}
 {:else}
   <div class="text-[12px] text-[var(--color-fg-dim)]">
