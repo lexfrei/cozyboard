@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.24
+# syntax=docker/dockerfile:1.25
 ARG BUN_VERSION=1.3-alpine
 
 FROM oven/bun:${BUN_VERSION} AS deps
