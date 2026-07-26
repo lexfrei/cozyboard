@@ -1,4 +1,12 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>lexfrei/renovate-config"]
+  "extends": ["github>lexfrei/renovate-config"],
+  "packageRules": [
+    {
+      "description": "Hold TypeScript at 6.x. The lint step dies on TypeScript 7 with 'TypeError: Cannot read properties of undefined (reading Cjs)' from inside the tooling, not from our code, so there is nothing here to fix. Remove this rule once the linter supports TypeScript 7.",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript"],
+      "allowedVersions": "<7.0.0"
+    }
+  ]
 }
