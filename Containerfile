@@ -24,5 +24,8 @@ COPY --from=build /app/dist ./dist
 COPY --from=build /app/server.ts ./
 COPY --from=build /app/package.json ./
 EXPOSE 8080
-USER bun
+# Numeric, not the `bun` name: a runtime that has to verify the user is
+# non-root before starting (kubelet with runAsNonRoot) cannot resolve a
+# name out of the image and refuses to start the container.
+USER 1000:1000
 CMD ["bun", "server.ts"]
