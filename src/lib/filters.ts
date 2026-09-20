@@ -7,6 +7,7 @@ export interface Filters {
   readyForReview: TriState
   mine: TriState
   fromMaintainer: TriState
+  fromBot: TriState
   reviewedByMe: TriState
   requestedFromMe: TriState
   minAgeDays: number | null
@@ -19,6 +20,7 @@ export const EMPTY_FILTERS: Filters = {
   readyForReview: null,
   mine: null,
   fromMaintainer: null,
+  fromBot: null,
   reviewedByMe: null,
   requestedFromMe: null,
   minAgeDays: null,
@@ -49,6 +51,12 @@ export function isReadyForReview(pr: PullRequest): boolean {
 
 export function isFromMaintainer(pr: PullRequest): boolean {
   return MAINTAINER_SET.has(pr.authorAssociation)
+}
+
+// GraphQL reports an app actor as __typename Bot; unlike REST it does not
+// append a [bot] suffix to the login, so the login cannot be sniffed for it.
+export function isFromBot(pr: PullRequest): boolean {
+  return pr.authorIsBot
 }
 
 export function isMine(pr: PullRequest, viewer: string | null): boolean {
@@ -115,6 +123,7 @@ export function passesFilters(
   if (!matchesTriState(filters.readyForReview, isReadyForReview(pr))) return false
   if (!matchesTriState(filters.mine, isMine(pr, viewer))) return false
   if (!matchesTriState(filters.fromMaintainer, isFromMaintainer(pr))) return false
+  if (!matchesTriState(filters.fromBot, isFromBot(pr))) return false
   if (!matchesTriState(filters.reviewedByMe, isReviewedByMe(pr))) return false
   if (!matchesTriState(filters.requestedFromMe, isRequestedFromMe(pr, viewer))) return false
   if (!passesOrgFilter(pr, filters.orgs)) return false
@@ -139,6 +148,7 @@ export function isFilterActive(filters: Filters): boolean {
     filters.readyForReview !== null ||
     filters.mine !== null ||
     filters.fromMaintainer !== null ||
+    filters.fromBot !== null ||
     filters.reviewedByMe !== null ||
     filters.requestedFromMe !== null ||
     filters.minAgeDays !== null ||

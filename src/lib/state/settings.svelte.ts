@@ -54,6 +54,7 @@ function normaliseFilters(value: unknown): Filters {
     readyForReview: triFrom(raw.readyForReview),
     mine: triFrom(raw.mine),
     fromMaintainer: triFrom(raw.fromMaintainer),
+    fromBot: triFrom(raw.fromBot),
     reviewedByMe: triFrom(raw.reviewedByMe),
     requestedFromMe: triFrom(raw.requestedFromMe),
     minAgeDays: positiveNumberOrNull(raw.minAgeDays),

@@ -58,6 +58,8 @@ export function serializeShareableState(
   if (mine !== null) params.set('mine', mine)
   const maint = triToParam(f.fromMaintainer)
   if (maint !== null) params.set('maint', maint)
+  const bot = triToParam(f.fromBot)
+  if (bot !== null) params.set('bot', bot)
   const rev = triToParam(f.reviewedByMe)
   if (rev !== null) params.set('rev', rev)
   const req = triToParam(f.requestedFromMe)
@@ -103,6 +105,7 @@ export function parseShareableState(params: URLSearchParams): ShareableState | n
     readyForReview: paramToTri(params.get('ready')),
     mine: paramToTri(params.get('mine')),
     fromMaintainer: paramToTri(params.get('maint')),
+    fromBot: paramToTri(params.get('bot')),
     reviewedByMe: paramToTri(params.get('rev')),
     requestedFromMe: paramToTri(params.get('req')),
     minAgeDays: intFromParam(params.get('min')),

@@ -34,6 +34,7 @@ export interface PullRequest {
   title: string
   url: string
   author: Actor | null
+  authorIsBot: boolean
   authorAssociation: AuthorAssociation
   createdAt: string
   updatedAt: string

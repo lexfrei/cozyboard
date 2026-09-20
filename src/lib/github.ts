@@ -21,7 +21,7 @@ const QUERY = `query CozystackPRs($search: String!, $cursor: String) {
         number
         title
         url
-        author { login }
+        author { __typename login }
         authorAssociation
         createdAt
         updatedAt
@@ -55,7 +55,7 @@ export interface RawPR {
   number: number
   title: string
   url: string
-  author: { login: string } | null
+  author: { __typename: string; login: string } | null
   authorAssociation: AuthorAssociation
   createdAt: string
   updatedAt: string
@@ -100,7 +100,8 @@ export function transformPR(raw: RawPR): PullRequest {
     number: raw.number,
     title: raw.title,
     url: raw.url,
-    author: raw.author,
+    author: raw.author === null ? null : { login: raw.author.login },
+    authorIsBot: raw.author?.__typename === 'Bot',
     authorAssociation: raw.authorAssociation,
     createdAt: raw.createdAt,
     updatedAt: raw.updatedAt,

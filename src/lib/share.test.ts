@@ -75,6 +75,7 @@ describe('parseShareableState', () => {
         readyForReview: true,
         mine: false,
         fromMaintainer: true,
+        fromBot: false,
         reviewedByMe: false,
         requestedFromMe: true,
         minAgeDays: 5,

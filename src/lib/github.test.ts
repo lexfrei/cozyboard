@@ -8,7 +8,7 @@ function raw(overrides: Partial<RawPR> = {}): RawPR {
     number: 1,
     title: 't',
     url: 'u',
-    author: { login: 'a' },
+    author: { __typename: 'User', login: 'a' },
     authorAssociation: 'CONTRIBUTOR',
     createdAt: '2025-01-01T00:00:00Z',
     updatedAt: '2025-01-01T00:00:00Z',
@@ -68,6 +68,24 @@ describe('transformPR', () => {
       { name: 'priority/high', color: '00ff00' },
     ])
   })
+
+  it('marks a Bot actor as a bot author', () => {
+    const r = raw({ author: { __typename: 'Bot', login: 'renovate' } })
+    expect(transformPR(r).authorIsBot).toBe(true)
+  })
+
+  it('does not mark a human author as a bot', () => {
+    expect(transformPR(raw()).authorIsBot).toBe(false)
+  })
+
+  it('treats a missing author as not a bot', () => {
+    expect(transformPR(raw({ author: null })).authorIsBot).toBe(false)
+  })
+
+  it('keeps __typename out of the transformed author', () => {
+    const r = raw({ author: { __typename: 'Bot', login: 'renovate' } })
+    expect(transformPR(r).author).toEqual({ login: 'renovate' })
+  })
 })
 
 describe('groupByRepo', () => {
@@ -78,6 +96,7 @@ describe('groupByRepo', () => {
       title: id,
       url: 'u',
       author: { login: 'a' },
+      authorIsBot: false,
       authorAssociation: 'CONTRIBUTOR',
       createdAt: '2025-01-01T00:00:00Z',
       updatedAt,

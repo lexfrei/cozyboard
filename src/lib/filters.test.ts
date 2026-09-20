@@ -2,6 +2,8 @@ import { describe, it, expect } from 'bun:test'
 import {
   cycleTriState,
   EMPTY_FILTERS,
+  isFilterActive,
+  isFromBot,
   isReadyForReview,
   isReviewedByMe,
   passesFilters,
@@ -16,6 +18,7 @@ function pr(overrides: Partial<PullRequest> = {}): PullRequest {
     title: 't',
     url: 'u',
     author: { login: 'alice' },
+    authorIsBot: false,
     authorAssociation: 'CONTRIBUTOR',
     createdAt: '2025-01-01T00:00:00Z',
     updatedAt: '2025-01-01T00:00:00Z',
@@ -242,5 +245,44 @@ describe('passesFilters', () => {
       expect(passesFilters(otherButBroken, f, 'bob')).toBe(false) // not mine OK but not ready
       expect(passesFilters(otherAndReady, f, 'bob')).toBe(true) // not mine, ready
     })
+  })
+})
+
+describe('isFromBot', () => {
+  it('detects a bot author', () => {
+    expect(isFromBot(pr({ authorIsBot: true }))).toBe(true)
+  })
+
+  it('rejects a human author', () => {
+    expect(isFromBot(pr())).toBe(false)
+  })
+})
+
+describe('passesFilters fromBot', () => {
+  const bot = pr({ authorIsBot: true })
+  const human = pr()
+
+  function f(overrides: Partial<Filters> = {}): Filters {
+    return { ...EMPTY_FILTERS, ...overrides }
+  }
+
+  it('passes both when unset', () => {
+    expect(passesFilters(bot, f(), null)).toBe(true)
+    expect(passesFilters(human, f(), null)).toBe(true)
+  })
+
+  it('keeps only bots when set to include', () => {
+    expect(passesFilters(bot, f({ fromBot: true }), null)).toBe(true)
+    expect(passesFilters(human, f({ fromBot: true }), null)).toBe(false)
+  })
+
+  it('drops bots when set to exclude', () => {
+    expect(passesFilters(bot, f({ fromBot: false }), null)).toBe(false)
+    expect(passesFilters(human, f({ fromBot: false }), null)).toBe(true)
+  })
+
+  it('counts towards an active filter set', () => {
+    expect(isFilterActive(f())).toBe(false)
+    expect(isFilterActive(f({ fromBot: false }))).toBe(true)
   })
 })
