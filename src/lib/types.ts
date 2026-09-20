@@ -5,12 +5,7 @@ export type Mergeable = 'MERGEABLE' | 'CONFLICTING' | 'UNKNOWN'
 export type CheckStatus = 'SUCCESS' | 'FAILURE' | 'ERROR' | 'PENDING' | 'EXPECTED' | null
 
 export type BlockerCategory =
-  | 'conflict'
-  | 'ci-fail'
-  | 'changes-requested'
-  | 'no-reviewers'
-  | 'awaiting-review'
-  | 'approved'
+  'conflict' | 'ci-fail' | 'changes-requested' | 'no-reviewers' | 'awaiting-review' | 'approved'
 
 export interface Label {
   name: string

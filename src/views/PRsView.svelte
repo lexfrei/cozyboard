@@ -8,13 +8,7 @@
   import { isActionableByAuthor, passesFilters, type TriState } from '../lib/filters'
   import { deriveLabelFacets } from '../lib/labels'
   import type { PullRequest } from '../lib/types'
-  import {
-    POLL_INTERVAL_MS,
-    pullsMine,
-    refresh,
-    reset,
-    start,
-  } from '../lib/state/pullsMine.svelte'
+  import { POLL_INTERVAL_MS, pullsMine, refresh, reset, start } from '../lib/state/pullsMine.svelte'
   import {
     setPrsFilters,
     settings,
@@ -118,9 +112,8 @@
     <span
       >▸ {filteredGroups.length}/{pullsMine.groups.length} repositories
       <span class="text-[var(--color-border-bright)]">·</span>
-      {matched}/{pullsMine.totalPRs} open PRs by <span class="text-[var(--color-accent)]"
-        >@{viewer}</span
-      ></span
+      {matched}/{pullsMine.totalPRs} open PRs by
+      <span class="text-[var(--color-accent)]">@{viewer}</span></span
     >
     <Ticker
       lastFetchedAt={pullsMine.lastFetchedAt}

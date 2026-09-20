@@ -152,8 +152,8 @@
 {:else}
   <div class="text-[12px] text-[var(--color-fg-dim)]">
     enter a github username or org above to dump all visible public ssh keys.
-    <br />for a user → just their keys. for an org → all visible members' keys.
-    membership visibility depends on your token (private members need
+    <br />for a user → just their keys. for an org → all visible members' keys. membership
+    visibility depends on your token (private members need
     <span class="text-[var(--color-info)]">read:org</span> + being a member yourself).
   </div>
 {/if}

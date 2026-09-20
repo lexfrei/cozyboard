@@ -28,9 +28,7 @@
         onChange(tab.id)
       }}
       class="hover:text-[var(--color-accent)]"
-      style:color={active === tab.id
-        ? 'var(--color-fg-bright)'
-        : 'var(--color-fg-dim)'}
+      style:color={active === tab.id ? 'var(--color-fg-bright)' : 'var(--color-fg-dim)'}
     >
       {active === tab.id ? `[${tab.label}]` : tab.label}
     </button>

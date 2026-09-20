@@ -9,13 +9,7 @@
   import type { PullRequest } from '../lib/types'
   import { deriveLabelFacets } from '../lib/labels'
   import { parseShareableState, serializeShareableState } from '../lib/share'
-  import {
-    POLL_INTERVAL_MS,
-    pulls,
-    refresh,
-    reset,
-    start,
-  } from '../lib/state/pulls.svelte'
+  import { POLL_INTERVAL_MS, pulls, refresh, reset, start } from '../lib/state/pulls.svelte'
   import {
     setFilters,
     settings,

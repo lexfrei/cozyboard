@@ -6,12 +6,7 @@
   import { player } from './lib/music'
   import { hashForTab, tabFromHash, type Tab } from './lib/tabs'
   import { refresh } from './lib/state/pulls.svelte'
-  import {
-    setMusicEnabled,
-    setOrgs,
-    setToken,
-    settings,
-  } from './lib/state/settings.svelte'
+  import { setMusicEnabled, setOrgs, setToken, settings } from './lib/state/settings.svelte'
   import OrgsView from './views/OrgsView.svelte'
   import PRsView from './views/PRsView.svelte'
   import KeysView from './views/KeysView.svelte'
@@ -33,11 +28,7 @@
   function switchTab(tab: Tab) {
     const hash = hashForTab(tab)
     if (hash === '' && window.location.hash !== '') {
-      window.history.replaceState(
-        {},
-        '',
-        `${window.location.pathname}${window.location.search}`,
-      )
+      window.history.replaceState({}, '', `${window.location.pathname}${window.location.search}`)
     } else if (hash !== '' && window.location.hash !== hash) {
       window.location.hash = hash
     }
@@ -114,9 +105,7 @@
 
   {#if settings.token === null}
     <main class="mx-auto max-w-5xl px-4 py-6">
-      <pre
-        class="whitespace-pre-wrap text-[var(--color-fg)]"
-      >&gt; awaiting configuration
+      <pre class="whitespace-pre-wrap text-[var(--color-fg)]">&gt; awaiting configuration
 &gt; no github token in localStorage
 &gt;
 &gt; click <span class="text-[var(--color-accent)]">[⚙]</span> in the header to begin
@@ -127,7 +116,8 @@
 &gt; repos. without a token cozyboard literally cannot fetch anything.
 &gt;
 &gt; <span class="text-[var(--color-fg-bright)]">[is the login safe?]</span>
-&gt; <span class="text-[var(--color-accent)]">yes — your token stays in your browser.</span> it's written to
+&gt; <span class="text-[var(--color-accent)]">yes — your token stays in your browser.</span
+        > it's written to
 &gt; localStorage and sent with every fetch to api.github.com directly,
 &gt; over https, from this page. the cozyboard server never stores it
 &gt; and never logs it.
@@ -139,12 +129,21 @@
 &gt; instant the response leaves the server.
 &gt;
 &gt; <span class="text-[var(--color-fg-bright)]">[trust nobody?]</span>
-&gt; 1. fork <a href="https://github.com/lexfrei/cozyboard" target="_blank" rel="noopener noreferrer" class="text-[var(--color-info)] underline">github.com/lexfrei/cozyboard</a>
-&gt; 2. read <span class="text-[var(--color-info)]">src/</span> and <span class="text-[var(--color-info)]">server.ts</span> — a small typescript codebase
-&gt; 3. deploy your own with the <span class="text-[var(--color-info)]">Containerfile</span> at the repo root
+&gt; 1. fork <a
+          href="https://github.com/lexfrei/cozyboard"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="text-[var(--color-info)] underline">github.com/lexfrei/cozyboard</a
+        >
+&gt; 2. read <span class="text-[var(--color-info)]">src/</span> and <span
+          class="text-[var(--color-info)]">server.ts</span
+        > — a small typescript codebase
+&gt; 3. deploy your own with the <span class="text-[var(--color-info)]">Containerfile</span
+        > at the repo root
 &gt; 4. profit
 &gt;
-&gt; alternatively: open <span class="text-[var(--color-accent)]">[⚙]</span> → ▶ manual token (advanced), paste a
+&gt; alternatively: open <span class="text-[var(--color-accent)]">[⚙]</span
+        > → ▶ manual token (advanced), paste a
 &gt; fine-grained PAT, and the device-flow server proxy is bypassed
 &gt; entirely — the token goes straight from your clipboard to
 &gt; localStorage to api.github.com, no third party in the middle.

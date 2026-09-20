@@ -12,14 +12,7 @@
     dimFor?: (pr: PullRequest) => { dim: boolean; reason?: string }
   }
 
-  const {
-    group,
-    pinned,
-    collapsed,
-    onTogglePin,
-    onToggleCollapsed,
-    dimFor,
-  }: Props = $props()
+  const { group, pinned, collapsed, onTogglePin, onToggleCollapsed, dimFor }: Props = $props()
 </script>
 
 <section class="mb-2">
